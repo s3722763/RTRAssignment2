@@ -112,7 +112,7 @@ void Application::run() {
 
 void Application::load() {
 
-    glm::vec3 initialPosition = { 5, 5, 20 };
+    glm::vec3 initialPosition = { 0, 0, 10 };
     glm::vec3 initialLookAt = { 0, 0, -1 };
     glm::vec3 initialUp = { 0, 1, 0 };
     float initialYaw = -90;

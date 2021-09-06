@@ -30,13 +30,11 @@ ModelComponent ModelSystem::addModel(const std::string& directory, const std::st
 
 void ModelSystem::processNode(aiNode* node, const aiScene* scene, ModelComponent* modelComponent, const std::string& directory, std::map<std::string, GLuint>* loadedTextures) {
 	for (auto i = 0; i < node->mNumMeshes; i++) {
-		std::cout << "Mesh: " << i << std::endl;
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		this->processMesh(mesh, scene, modelComponent, directory, loadedTextures);
 	}
 
 	for (auto i = 0; i < node->mNumChildren; i++) {
-		std::cout << "Node: " << i << std::endl;
 		this->processNode(node->mChildren[i], scene, modelComponent, directory, loadedTextures);
 	}
 }
@@ -145,10 +143,10 @@ void ModelSystem::processTexture(ModelComponent* modelComponent, aiString path, 
 }
 
 void ModelSystem::createVAO(ModelComponent* modelComponent, size_t id) {
-	std::array<GLuint, 3> buffers;
+	std::array<GLuint, 4> buffers;
 
-	glGenBuffers(3, buffers.data());
-	GLuint vertexBuffer = buffers[0], indexBuffer = buffers[1], texCoordBuffer = buffers[2], vertexArray = 0;
+	glGenBuffers(4, buffers.data());
+	GLuint vertexBuffer = buffers[0], indexBuffer = buffers[1], texCoordBuffer = buffers[2], normalBuffer = buffers[3], vertexArray = 0;
 	glGenVertexArrays(1, &vertexArray);
 
 	glBindVertexArray(vertexArray);
@@ -161,12 +159,16 @@ void ModelSystem::createVAO(ModelComponent* modelComponent, size_t id) {
 	glBindBuffer(GL_ARRAY_BUFFER, texCoordBuffer);
 	glBufferData(GL_ARRAY_BUFFER, modelComponent->meshes.texCoords.at(id).size() * 2 * sizeof(GLfloat), modelComponent->meshes.texCoords.at(id).data(), GL_STATIC_DRAW);
 
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+	glBufferData(GL_ARRAY_BUFFER, modelComponent->meshes.normals.at(id).size() * 3 * sizeof(GLfloat), modelComponent->meshes.normals.at(id).data(), GL_STATIC_DRAW);
+
 	glBindVertexArray(0);
 
 	modelComponent->meshes.VAO.push_back(vertexArray);
 	modelComponent->meshes.IndexBufferObjects.push_back(indexBuffer);
 	modelComponent->meshes.VertexBufferObjects.push_back(vertexBuffer);
 	modelComponent->meshes.TextureCoordBufferObjects.push_back(texCoordBuffer);
+	modelComponent->meshes.NormalBufferObjects.push_back(normalBuffer);
 }
 
 ModelSystem::ModelSystem() {

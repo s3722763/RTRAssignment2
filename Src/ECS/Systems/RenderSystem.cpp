@@ -1,11 +1,15 @@
 #include "RenderSystem.h"
 
+constexpr unsigned int LIGHTING_SYSTEM_BINDING_POINT = 0;
+
 void RenderSystem::init() {
     PipelineCreateInfo info{};
     info.fragmentShaderPath = "Resources/Shaders/fragment.frag";
     info.vertexShaderPath = "Resources/Shaders/vertex.vert";
     info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
     this->pipeline.init(&info);
+
+    this->lightingSystem.createBuffer(LIGHTING_SYSTEM_BINDING_POINT);
 }
 
 void RenderSystem::addRenderableEntity(size_t id) {
@@ -21,15 +25,25 @@ void RenderSystem::removeRenderableEntity(size_t id) {
 	}
 }
 
+void RenderSystem::addLight(LightInfo* info) {
+    this->lightingSystem.addLight(info);
+}
+
+void RenderSystem::update() {
+    this->lightingSystem.update();
+}
+
 void RenderSystem::render(const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj) {
 	for (auto renderableId : this->renderableEntities) {
         const ModelComponent* model = &modelComponents->at(renderableId);
 
         this->pipeline.use();
         this->pipeline.setMatrix4x4Uniform("viewProj", viewProj);
+        this->pipeline.bindUniformBlock("LightData", LIGHTING_SYSTEM_BINDING_POINT);
 
         GLuint vertexPosition = this->pipeline.getVertexAttribIndex("positionVert");
         GLuint texCoordPosition = this->pipeline.getVertexAttribIndex("texCoordVert");
+        GLuint normalPosition = this->pipeline.getVertexAttribIndex("normalVert");
 
         for (auto i = 0; i < model->meshes.VAO.size(); i++) {
             glActiveTexture(GL_TEXTURE0);
@@ -43,6 +57,10 @@ void RenderSystem::render(const std::vector<ModelComponent>* modelComponents, gl
             glBindBuffer(GL_ARRAY_BUFFER, model->meshes.TextureCoordBufferObjects.at(i));
             glEnableVertexAttribArray(texCoordPosition);
             glVertexAttribPointer(texCoordPosition, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
+
+            glBindBuffer(GL_ARRAY_BUFFER, model->meshes.NormalBufferObjects.at(i));
+            glEnableVertexAttribArray(normalPosition);
+            glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
 
             // First specified texture in shader
             glDrawElements(GL_TRIANGLES, model->meshes.indices.at(i).size(), GL_UNSIGNED_INT, NULL);

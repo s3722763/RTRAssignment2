@@ -29,6 +29,14 @@ size_t Scene::createEntity(EntityCreateInfo* info) {
 
 void Scene::init() {
     this->renderSystem.init();
+    LightInfo lightInfo;
+    lightInfo.ambient = glm::vec4{ 0.0 };
+    lightInfo.position = glm::vec4{0.0, 0.0, 10.0, 0.0};
+    lightInfo.direction = glm::vec4{ 0.0 };
+    lightInfo.specular = glm::vec4{ 0.2, 0.2, 0.2, 0.2};
+    lightInfo.diffuse = glm::vec4{ 0.5, 0.5, 0.5, 1 };
+
+    this->renderSystem.addLight(&lightInfo);
 }
 
 void Scene::load(Camera camera) {
@@ -77,6 +85,8 @@ void Scene::update(float delta_s, SceneUpdateResult* result) {
     if (currentKeyStates[SDL_SCANCODE_Q] == 1) {
         *result |= SceneUpdateResultFlags::Quit;
     }
+
+    this->renderSystem.update();
 }
 
 void Scene::draw(SDL_Window* window) {

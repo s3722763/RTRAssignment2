@@ -26,6 +26,7 @@ typedef struct MeshComponents {
 	std::vector<GLuint> VertexBufferObjects;
 	std::vector<GLuint> IndexBufferObjects;
 	std::vector<GLuint> TextureCoordBufferObjects;
+	std::vector<GLuint> NormalBufferObjects;
 } MeshComponents;
 
 struct ModelComponent {

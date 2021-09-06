@@ -11,9 +11,11 @@ public:
 
 		glBindBuffer(GL_UNIFORM_BUFFER, this->uniformBufferObject);
 		glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_STATIC_DRAW);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, size, data);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 		glBindBufferRange(GL_UNIFORM_BUFFER, uniformBindingPoint, this->uniformBufferObject, 0, size);
+		
 	}
 
 	void update(T* data, size_t size) {

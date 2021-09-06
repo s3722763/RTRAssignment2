@@ -179,6 +179,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <ClCompile Include="Src\ECS\Entities.cpp" />
     <ClCompile Include="Src\ECS\Scene.cpp" />
     <ClCompile Include="Src\ECS\Systems\ModelSystem.cpp" />
+    <ClCompile Include="Src\ECS\Systems\RenderSubSystems\LightingSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\RenderSystem.cpp" />
     <ClCompile Include="Src\Render\Pipeline.cpp" />
     <ClCompile Include="Src\Utility\Camera.cpp" />
@@ -189,6 +190,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <ClInclude Include="Src\ECS\Entities.h" />
     <ClInclude Include="Src\ECS\Scene.h" />
     <ClInclude Include="Src\ECS\Systems\ModelSystem.h" />
+    <ClInclude Include="Src\ECS\Systems\RenderSubSystems\LightingSystem.h" />
     <ClInclude Include="Src\ECS\Systems\RenderSystem.h" />
     <ClInclude Include="Src\Render\Pipeline.h" />
     <ClInclude Include="Src\Render\UniformBlock.h" />
