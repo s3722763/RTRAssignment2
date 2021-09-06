@@ -8,33 +8,24 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-void ModelSystem::addModel(const std::string& directory, const std::string& modelFileName, size_t* id) {
-	*id = this->models.size();
-
+ModelComponent ModelSystem::addModel(const std::string& directory, const std::string& modelFileName) {
 	Assimp::Importer importer;
 	std::string modelFilepath = directory;
 	modelFilepath = modelFilepath.append("/").append(modelFileName);
 
 	const aiScene* scene = importer.ReadFile(modelFilepath, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
+	ModelComponent modelComponent;
+
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 		std::cerr << "Error : Assimp : " << importer.GetErrorString() << "\n";
-		return;
+		return modelComponent;
 	}
 
-	ModelComponent modelComponent;
 	std::map<std::string, GLuint> loadedTextures;
 
 	this->processNode(scene->mRootNode, scene, &modelComponent, directory, &loadedTextures);
-	this->models.push_back(std::move(modelComponent));
-}
-
-void ModelSystem::removeModel(size_t id) {
-	auto modelToRemove = this->models.begin() + id;
-	this->models.erase(modelToRemove);
-
-	auto modelFlagsToRemove = this->modelFlags.begin() + id;
-	this->modelFlags.erase(modelFlagsToRemove);
+	return std::move(modelComponent);
 }
 
 void ModelSystem::processNode(aiNode* node, const aiScene* scene, ModelComponent* modelComponent, const std::string& directory, std::map<std::string, GLuint>* loadedTextures) {

@@ -176,6 +176,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
   <ItemGroup>
     <ClCompile Include="include\glad\glad.c" />
     <ClCompile Include="Src\Assignment1.cpp" />
+    <ClCompile Include="Src\ECS\Entities.cpp" />
     <ClCompile Include="Src\ECS\Scene.cpp" />
     <ClCompile Include="Src\ECS\Systems\ModelSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\RenderSystem.cpp" />
@@ -185,6 +186,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
   <ItemGroup>
     <ClInclude Include="Src\Assignment1.h" />
     <ClInclude Include="Src\ECS\Components\ModelComponent.h" />
+    <ClInclude Include="Src\ECS\Entities.h" />
     <ClInclude Include="Src\ECS\Scene.h" />
     <ClInclude Include="Src\ECS\Systems\ModelSystem.h" />
     <ClInclude Include="Src\ECS\Systems\RenderSystem.h" />

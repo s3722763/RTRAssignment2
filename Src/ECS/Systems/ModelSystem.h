@@ -18,9 +18,6 @@ class ModelSystem {
 public:
 	ModelSystem();
 	
-	std::vector<ModelComponent> models;
-	std::vector<uint64_t> modelFlags;
-
-	void addModel(const std::string& directory, const std::string& modelFileName, size_t* id);
+	ModelComponent addModel(const std::string& directory, const std::string& modelFileName);
 	void removeModel(size_t id);
 };

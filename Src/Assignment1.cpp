@@ -76,12 +76,13 @@ void Application::init() {
             }
         }
     }
+
+    this->scene.init();
 }
 
 void Application::run() {
     bool quit = false;
     SceneUpdateResult sceneUpdateResult{};
-
 
     while (!quit) {
         std::chrono::steady_clock::time_point static time = std::chrono::steady_clock::now();

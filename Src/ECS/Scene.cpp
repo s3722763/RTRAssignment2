@@ -8,36 +8,35 @@ constexpr float FOV = 45.0f;
 constexpr float NEAR_PLANE = 0.1f;
 constexpr float FAR_PLANE = 1000.0f;
 
-size_t Scene::createEntity(EntityCreateInfo* info) {
-    size_t id = 0;
+size_t Scene::createEntity(EntityCreateInfo* info) {    
+    AddEntityInfo addEntityInfo;
 
-    if (!this->reusableIds.empty()) {
-        id = this->reusableIds.front();
-        this->reusableIds.pop();
-    } else {
-        id = this->usedIds.size();
+    // Create attributes
+    if ((info->flags & EntityCreateInfoFlags::HasModel) != 0) {
+       addEntityInfo.modelComponent = std::move(this->modelSystem.addModel(info->directory, info->model));  
     }
 
-    this->usedIds.push_back(id);
+    // Store attributes
+    size_t id = this->entities.addEntity(&addEntityInfo);
 
-    if ((info->flags & EntityCreateInfoFlags::HasModel) != 0) {
-        size_t modelId;
-        this->modelSystem.addModel(info->directory, info->model, &modelId);
+    // Pass ids for atttributes
+    if ((info->flags & EntityCreateInfoFlags::Renderable) != 0) {
+        this->renderSystem.addRenderableEntity(id);
     }
 
     return id;
 }
 
-void Scene::load(Camera camera) {
-    size_t id;
-    this->modelSystem.addModel("Resources/models/backpack", "backpack.obj", &id);
-    this->backpackID = id;
+void Scene::init() {
+    this->renderSystem.init();
+}
 
-    PipelineCreateInfo info{};
-    info.fragmentShaderPath = "Resources/Shaders/fragment.frag";
-    info.vertexShaderPath = "Resources/Shaders/vertex.vert";
-    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
-    pipeline.init(&info);
+void Scene::load(Camera camera) {
+    EntityCreateInfo info{};
+    info.directory = "Resources/models/backpack";
+    info.model = "backpack.obj";
+    info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable;
+    this->createEntity(&info);
 
     this->camera = std::move(camera);
 }
@@ -81,8 +80,6 @@ void Scene::update(float delta_s, SceneUpdateResult* result) {
 }
 
 void Scene::draw(SDL_Window* window) {
-    auto* model = &this->modelSystem.models.at(this->backpackID);
-
     int width, height;
     SDL_GetWindowSize(window, &width, &height);
 
@@ -91,29 +88,5 @@ void Scene::draw(SDL_Window* window) {
 
     glm::mat4 viewProj = proj * view;
 
-    this->pipeline.use();
-    this->pipeline.setMatrix4x4Uniform("viewProj", viewProj);
-
-    GLuint vertexPosition = this->pipeline.getVertexAttribIndex("positionVert");
-    GLuint texCoordPosition = this->pipeline.getVertexAttribIndex("texCoordVert");
-
-    for (auto i = 0; i < model->meshes.VAO.size(); i++) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, model->meshes.diffuseTextures.at(i));
-        glBindVertexArray(model->meshes.VAO.at(i));
-
-        glBindBuffer(GL_ARRAY_BUFFER, model->meshes.VertexBufferObjects.at(i));
-        glEnableVertexAttribArray(vertexPosition);
-        glVertexAttribPointer(vertexPosition, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
-
-        glBindBuffer(GL_ARRAY_BUFFER, model->meshes.TextureCoordBufferObjects.at(i));
-        glEnableVertexAttribArray(texCoordPosition);
-        glVertexAttribPointer(texCoordPosition, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
-
-        // First specified texture in shader
-        glDrawElements(GL_TRIANGLES, model->meshes.indices.at(i).size(), GL_UNSIGNED_INT, NULL);
-        glBindVertexArray(0);
-    }
-
-
+    this->renderSystem.render(this->entities.getModelComponents(), viewProj);
 }
