@@ -40,8 +40,8 @@ vec3 getDiffuse(vec3 pos, vec3 normal, vec3 albedo) {
 	return result;
 }
 
-/*vec4 getSpecular() {
-	vec4 result = vec4(0);
+vec3 getSpecular(vec3 pos, vec3 normal, float specIn) {
+	vec3 result = vec3(0);
 
 	for (uint i = uint(0); i < lightData.numberLights; i++) {
 		vec3 lightDir = normalize(lightData.lights.positions[i].xyz - pos);
@@ -50,23 +50,23 @@ vec3 getDiffuse(vec3 pos, vec3 normal, vec3 albedo) {
 		vec3 halfwayDir = normalize(lightDir + viewDir);
 
 		// TODO: Change shininess from 64 to material value
-		float spec = pow(max(dot(normal, halfwayDir), 0.0), 64);
-		vec4 specular = (texture(specularTexture, texCoord) * spec) * lightData.lights.speculars[i];
+		float spec = pow(max(dot(normal, halfwayDir), 0.0), 16.0);
+		vec3 specular = spec * specIn * lightData.lights.speculars[i].rgb;
 
 		result += specular;
 	}
 
 	return result;
-}*/
+}
 
 void main() {
 	vec3 fragPos = texture(gPosition, texCoord).rgb;
 	vec3 normal = texture(gNormal, texCoord).rgb;
 	vec3 albedo = texture(gAlbedoSpec, texCoord).rgb;
-	float specular = texture(gAlbedoSpec, texCoord).a;
+	float spec = texture(gAlbedoSpec, texCoord).a;
 
 	vec3 ambient = albedo * lightData.ambientStrength;
 	vec3 diffuse = getDiffuse(fragPos, normal, albedo);
-	//vec4 specular = getSpecular();
-	color = vec4(diffuse + ambient, 1.0);
+	vec3 specular = getSpecular(fragPos, normal, spec);
+	color = vec4(diffuse + ambient + specular, 1.0);
 }
