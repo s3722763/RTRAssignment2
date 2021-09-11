@@ -86,9 +86,14 @@
     <ClInclude Include="Src\ECS\Components\MovementComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Utility\Window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Shaders\vertex.vert" />
     <None Include="Resources\Shaders\fragment.frag" />
+    <None Include="Resources\Shaders\deferredFragment.frag" />
+    <None Include="Resources\Shaders\deferredVertex.vert" />
   </ItemGroup>
 </Project>

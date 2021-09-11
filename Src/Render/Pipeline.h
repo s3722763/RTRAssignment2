@@ -44,6 +44,7 @@ public:
 	void setVec3Uniform(const char* name, const glm::vec3& vector);
 	void setFloatUniform(const char* name, const GLfloat& value);
 	void setBooleanUniform(const char* name, const GLboolean& value);
+	void setIntUniform(const char* name, const GLint& value);
 
 	GLuint getVertexAttribIndex(const char* name);
 	GLuint getUniformBlockIndex(const char* name);

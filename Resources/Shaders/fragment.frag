@@ -3,14 +3,13 @@
 #define MAX_LIGHTS 10
 
 in vec2 texCoord;
-in vec3 normal;
-in vec3 pos;
 
 out vec4 color;
 
 uniform vec3 viewPos;
-uniform sampler2D diffuseTexture;
-uniform sampler2D specularTexture;
+uniform sampler2D gPosition;
+uniform sampler2D gNormal;
+uniform sampler2D gAlbedoSpec;
 
 struct Lights {
 	vec4[MAX_LIGHTS] positions;
@@ -26,22 +25,22 @@ layout (std140) uniform LightData {
 	uint numberLights;
 } lightData;
 
-vec4 getDiffuse() {
-	vec4 result = vec4(0);
+vec3 getDiffuse(vec3 pos, vec3 normal, vec3 albedo) {
+	vec3 result = vec3(0);
 	
 	for (uint i = uint(0); i < lightData.numberLights; i++) {
 		// Right now only supports point lights
 		vec3 lightDir = normalize(lightData.lights.positions[i].xyz - pos);
 
 		float diff = max(dot(normal, lightDir), 0.0);
-		vec4 diffuse = (diff  * texture(diffuseTexture, texCoord)) * lightData.lights.diffuses[i];
+		vec3 diffuse = diff * albedo * lightData.lights.diffuses[i].rgb;
 		result += diffuse;
 	}
 
 	return result;
 }
 
-vec4 getSpecular() {
+/*vec4 getSpecular() {
 	vec4 result = vec4(0);
 
 	for (uint i = uint(0); i < lightData.numberLights; i++) {
@@ -58,11 +57,16 @@ vec4 getSpecular() {
 	}
 
 	return result;
-}
+}*/
 
 void main() {
-	vec4 ambient = texture(diffuseTexture, texCoord) * lightData.ambientStrength;
-	vec4 diffuse = getDiffuse();
-	vec4 specular = getSpecular();
-	color = diffuse + ambient + specular;
+	vec3 fragPos = texture(gPosition, texCoord).rgb;
+	vec3 normal = texture(gNormal, texCoord).rgb;
+	vec3 albedo = texture(gAlbedoSpec, texCoord).rgb;
+	float specular = texture(gAlbedoSpec, texCoord).a;
+
+	vec3 ambient = albedo * lightData.ambientStrength;
+	vec3 diffuse = getDiffuse(fragPos, normal, albedo);
+	//vec4 specular = getSpecular();
+	color = vec4(diffuse + ambient, 1.0);
 }

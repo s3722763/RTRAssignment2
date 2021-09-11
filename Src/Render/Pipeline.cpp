@@ -96,6 +96,10 @@ void Pipeline::setBooleanUniform(const char* name, const GLboolean& value) {
 	glUniform1i(glGetUniformLocation(this->programID, name), value);
 }
 
+void Pipeline::setIntUniform(const char* name, const GLint& value) {
+	glUniform1i(glGetUniformLocation(this->programID, name), value);
+}
+
 void Pipeline::bindUniformBlock(const char* name, GLuint binding) {
 	GLuint index = glGetUniformBlockIndex(this->programID, name);
 	glUniformBlockBinding(this->programID, index, binding);

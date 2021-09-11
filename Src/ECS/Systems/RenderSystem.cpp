@@ -1,17 +1,88 @@
 #include "RenderSystem.h"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
-
+#include <iostream>
 constexpr unsigned int LIGHTING_SYSTEM_BINDING_POINT = 0;
 
-void RenderSystem::init() {
+const std::array<glm::vec3, 4> QUAD_VERTICES = {
+    glm::vec3{-1.0f, 1.0f, 0.0f},
+    glm::vec3{-1.0f, -1.0f, 0.0f},
+    glm::vec3{1.0f, 1.0f, 0.0f},
+    glm::vec3{1.0f, -1.0f, 0.0f}
+};
+
+const std::array<glm::vec2, 4> QUAD_TEX_COORDS = {
+    glm::vec2{0.0f, 1.0f},
+    glm::vec2{0.0f, 0.0f},
+    glm::vec2{1.0f, 1.0f},
+    glm::vec2{1.0f, 0.0f}
+};
+
+
+void RenderSystem::initFramebuffers(Window* window) {
+    glGenFramebuffers(1, &this->gBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
+
+    // GL_RGBA16F as GPIs generally prefer 4-component formats over 3 (due to byte alignment)
+
+    // Position color buffer
+    glGenTextures(1, &this->positionColorFrameBuffer);
+    glBindTexture(GL_TEXTURE_2D, this->positionColorFrameBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window->width, window->height, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->positionColorFrameBuffer, 0);
+
+    // Normal buffer
+    glGenTextures(1, &this->normalFrameBuffer);
+    glBindTexture(GL_TEXTURE_2D, this->normalFrameBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window->width, window->height, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, this->normalFrameBuffer, 0);
+
+    // Specular color buffer
+    glGenTextures(1, &this->specularColorFrameBuffer);
+    glBindTexture(GL_TEXTURE_2D, this->specularColorFrameBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window->width, window->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, this->specularColorFrameBuffer, 0);
+
+    GLuint attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(3, attachments);
+
+    // Depth buffer
+    glGenRenderbuffers(1, &this->rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, this->rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window->width, window->height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, this->rboDepth);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "Framebuffer not complete" << std::endl;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void RenderSystem::init(Window* window) {
+    this->initFramebuffers(window);
+
     PipelineCreateInfo info{};
     info.fragmentShaderPath = "Resources/Shaders/fragment.frag";
+    info.vertexShaderPath = "Resources/Shaders/deferredVertex.vert";
+    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
+    this->lightingPipeline.init(&info);
+
+    //PipelineCreateInfo info{};
+    info.fragmentShaderPath = "Resources/Shaders/deferredFragment.frag";
     info.vertexShaderPath = "Resources/Shaders/vertex.vert";
     info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
-    this->pipeline.init(&info);
+    this->gBufferPipeline.init(&info);
 
     this->lightingSystem.createBuffer(LIGHTING_SYSTEM_BINDING_POINT);
+    
+    this->quad.init();
 }
 
 void RenderSystem::addRenderableEntity(size_t id) {
@@ -35,8 +106,13 @@ void RenderSystem::update(const std::vector<PositionComponent>* positions) {
     this->lightingSystem.update(positions);
 }
 
-void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, Camera* camera) {
-	for (auto renderableId : this->renderableEntities) {
+void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, Camera* camera) {  
+    // GEOMETRY PART OF DEFERRED PIPELINE
+    glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    for (auto renderableId : this->renderableEntities) {
         const ModelComponent* model = &modelComponents->at(renderableId);
 
         // Setup model matrix
@@ -46,15 +122,13 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
         // Rotate
         modelMatrix = modelMatrix * glm::toMat4(positions->at(renderableId).rotation);
 
-        this->pipeline.use();
-        this->pipeline.setMatrix4x4Uniform("viewProj", viewProj);
-        this->pipeline.setMatrix4x4Uniform("model", modelMatrix);
-        this->pipeline.setVec3Uniform("viewPos", camera->getPosition());
-        this->pipeline.bindUniformBlock("LightData", LIGHTING_SYSTEM_BINDING_POINT);
+        this->gBufferPipeline.use();
+        this->gBufferPipeline.setMatrix4x4Uniform("viewProj", viewProj);
+        this->gBufferPipeline.setMatrix4x4Uniform("model", modelMatrix);
 
-        GLuint vertexPosition = this->pipeline.getVertexAttribIndex("positionVert");
-        GLuint texCoordPosition = this->pipeline.getVertexAttribIndex("texCoordVert");
-        GLuint normalPosition = this->pipeline.getVertexAttribIndex("normalVert");
+        GLuint vertexPosition = this->gBufferPipeline.getVertexAttribIndex("positionVert");
+        GLuint texCoordPosition = this->gBufferPipeline.getVertexAttribIndex("texCoordVert");
+        GLuint normalPosition = this->gBufferPipeline.getVertexAttribIndex("normalVert");
 
         for (auto i = 0; i < model->meshes.VAO.size(); i++) {
             glActiveTexture(GL_TEXTURE0);
@@ -82,4 +156,45 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
             glBindVertexArray(0);
         }
 	}
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // LIGHTING PART OF DEFERRED PIPELINE
+    this->lightingPipeline.use();
+    this->lightingPipeline.setIntUniform("gPosition", 0);
+    this->lightingPipeline.setIntUniform("gNormal", 1);
+    this->lightingPipeline.setIntUniform("gAlbedoSpec", 2);
+
+    this->lightingPipeline.bindUniformBlock("LightData", LIGHTING_SYSTEM_BINDING_POINT);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, this->positionColorFrameBuffer);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, this->normalFrameBuffer);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, this->specularColorFrameBuffer);
+
+    this->gBufferPipeline.setVec3Uniform("viewPos", camera->getPosition());
+
+    glBindVertexArray(this->quad.VAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
+void Quad::init() {
+    glGenVertexArrays(1, &this->VAO);
+    GLuint buffers[2];
+
+    glGenBuffers(2, buffers);
+    this->VertexBuffer = buffers[0];
+    this->TexCoordBuffer = buffers[1];
+    glBindVertexArray(this->VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->VertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(QUAD_VERTICES), &QUAD_VERTICES, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->TexCoordBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(QUAD_TEX_COORDS), &QUAD_TEX_COORDS, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
 }

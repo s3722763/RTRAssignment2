@@ -8,6 +8,7 @@
 #include <queue>
 #include "Systems/RenderSystem.h"
 #include "Systems/MovementSystem.h"
+#include "../Utility/Window.h"
 
 typedef uint64_t SceneUpdateResult;
 
@@ -43,7 +44,7 @@ private:
 	size_t createEntity(EntityCreateInfo* info);
 
 public:
-	void init();
+	void init(Window* window);
 	void load(Camera camera);
 	void update(float delta_s, SceneUpdateResult* result);
 	// TODO: Remove to own system

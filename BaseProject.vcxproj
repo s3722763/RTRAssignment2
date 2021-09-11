@@ -199,8 +199,11 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <ClInclude Include="Src\Render\Pipeline.h" />
     <ClInclude Include="Src\Render\UniformBlock.h" />
     <ClInclude Include="Src\Utility\Camera.h" />
+    <ClInclude Include="Src\Utility\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\Shaders\deferredFragment.frag" />
+    <None Include="Resources\Shaders\deferredVertex.vert" />
     <None Include="Resources\Shaders\fragment.frag" />
     <None Include="Resources\Shaders\vertex.vert" />
   </ItemGroup>

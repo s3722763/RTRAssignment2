@@ -38,20 +38,20 @@ size_t Scene::createEntity(EntityCreateInfo* info) {
     return id;
 }
 
-void Scene::init() {
-    this->renderSystem.init();
+void Scene::init(Window* window) {
+    this->renderSystem.init(window);
 }
 
 void Scene::load(Camera camera) {
     EntityCreateInfo info{};
     info.directory = "Resources/models/backpack";
     info.model = "backpack.obj";
-    info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable | EntityCreateInfoFlags::HasPosition | EntityCreateInfoFlags::Moves;
+    info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable | EntityCreateInfoFlags::HasPosition;
     info.positionComponent.WorldPosition = glm::vec3{ 0.0, 0.0, -20 };
     // Pitch, Yaw, Roll
     glm::vec3 initialRotation = { 0.0f,  -glm::pi<float>() / 4, 0.0f };
     info.positionComponent.rotation = initialRotation;
-    info.movementComponent.velocity = { 0, 0, -10 };
+    //info.movementComponent.velocity = { 0, 0, -10 };
     this->createEntity(&info);
 
     EntityCreateInfo lightEntityInfo{};

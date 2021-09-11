@@ -70,14 +70,14 @@ void Application::init() {
 
                     //glEnable(GL_DEBUG_OUTPUT);
                     //glDebugMessageCallback(MessageCallback, 0);
-
+                    this->windowInfo = { width, height };
                     glViewport(0, 0, width, height);
                 }
             }
         }
     }
 
-    this->scene.init();
+    this->scene.init(&this->windowInfo);
 }
 
 void Application::run() {
