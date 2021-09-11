@@ -41,3 +41,7 @@ void Camera::updateLookDirection(float pitchChange, float yawChange) {
 glm::mat4 Camera::generateView() {
     return glm::lookAt(this->Position, this->LookAt + this->Position, this->Up);
 }
+
+glm::vec3 Camera::getPosition() {
+    return this->Position;
+}

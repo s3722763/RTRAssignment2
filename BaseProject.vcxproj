@@ -187,6 +187,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
   <ItemGroup>
     <ClInclude Include="Src\Assignment1.h" />
     <ClInclude Include="Src\ECS\Components\ModelComponent.h" />
+    <ClInclude Include="Src\ECS\Components\PositionComponent.h" />
     <ClInclude Include="Src\ECS\Entities.h" />
     <ClInclude Include="Src\ECS\Scene.h" />
     <ClInclude Include="Src\ECS\Systems\ModelSystem.h" />

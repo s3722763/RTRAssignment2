@@ -1,10 +1,12 @@
 #pragma once
 #include <vector>
 #include "Components/ModelComponent.h"
+#include "Components/PositionComponent.h"
 #include <queue>
 
 struct AddEntityInfo {
 	ModelComponent modelComponent;
+	PositionComponent positionComponent;
 };
 
 class Entities {
@@ -14,9 +16,11 @@ class Entities {
 
 	// Components
 	std::vector<ModelComponent> models;
+	std::vector<PositionComponent> positions;
 
 public:
 	size_t addEntity(AddEntityInfo* info);
 
 	std::vector<ModelComponent>* getModelComponents();
+	std::vector<PositionComponent>* getPositionComponents();
 };

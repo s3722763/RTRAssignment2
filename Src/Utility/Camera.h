@@ -14,4 +14,5 @@ public:
 	void updateCamera(float delta_s, const uint8_t* currentKeyStates);
 	void updateLookDirection(float pitchChange, float yawChange);
 	glm::mat4 generateView();
+	glm::vec3 getPosition();
 };

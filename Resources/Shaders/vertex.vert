@@ -9,9 +9,10 @@ out vec3 normal;
 out vec3 pos;
 
 uniform mat4 viewProj;
+uniform mat4 model;
 
 void main () {
-	vec4 adjustedPos = viewProj * vec4(positionVert, 1.0);
+	vec4 adjustedPos = viewProj * model * vec4(positionVert, 1.0);
 	gl_Position = adjustedPos;
 
 	texCoord = texCoordVert;

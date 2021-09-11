@@ -1,4 +1,5 @@
 #include "RenderSystem.h"
+#include <glm/ext/matrix_transform.hpp>
 
 constexpr unsigned int LIGHTING_SYSTEM_BINDING_POINT = 0;
 
@@ -29,16 +30,22 @@ void RenderSystem::addLight(LightInfo* info) {
     this->lightingSystem.addLight(info);
 }
 
-void RenderSystem::update() {
-    this->lightingSystem.update();
+void RenderSystem::update(const std::vector<PositionComponent>* positions) {
+    this->lightingSystem.update(positions);
 }
 
-void RenderSystem::render(const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj) {
+void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj) {
 	for (auto renderableId : this->renderableEntities) {
         const ModelComponent* model = &modelComponents->at(renderableId);
 
+        // Setup model matrix
+        glm::mat4 modelMatrix{1.0};
+        modelMatrix = glm::translate(modelMatrix, positions->at(renderableId).WorldPosition);
+
+
         this->pipeline.use();
         this->pipeline.setMatrix4x4Uniform("viewProj", viewProj);
+        this->pipeline.setMatrix4x4Uniform("model", modelMatrix);
         this->pipeline.bindUniformBlock("LightData", LIGHTING_SYSTEM_BINDING_POINT);
 
         GLuint vertexPosition = this->pipeline.getVertexAttribIndex("positionVert");

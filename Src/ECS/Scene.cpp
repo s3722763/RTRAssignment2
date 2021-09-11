@@ -4,6 +4,8 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 
+#include <iostream>
+
 constexpr float FOV = 45.0f;
 constexpr float NEAR_PLANE = 0.1f;
 constexpr float FAR_PLANE = 1000.0f;
@@ -14,6 +16,12 @@ size_t Scene::createEntity(EntityCreateInfo* info) {
     // Create attributes
     if ((info->flags & EntityCreateInfoFlags::HasModel) != 0) {
        addEntityInfo.modelComponent = std::move(this->modelSystem.addModel(info->directory, info->model));  
+    }
+
+    if ((info->flags & EntityCreateInfoFlags::HasPosition) != 0) {
+        PositionComponent positionComponent{};
+        positionComponent.WorldPosition = std::move(info->position);
+        addEntityInfo.positionComponent = std::move(positionComponent);
     }
 
     // Store attributes
@@ -29,22 +37,30 @@ size_t Scene::createEntity(EntityCreateInfo* info) {
 
 void Scene::init() {
     this->renderSystem.init();
-    LightInfo lightInfo;
-    lightInfo.ambient = glm::vec4{ 0.0 };
-    lightInfo.position = glm::vec4{0.0, 0.0, 10.0, 0.0};
-    lightInfo.direction = glm::vec4{ 0.0 };
-    lightInfo.specular = glm::vec4{ 0.2, 0.2, 0.2, 0.2};
-    lightInfo.diffuse = glm::vec4{ 0.5, 0.5, 0.5, 1 };
-
-    this->renderSystem.addLight(&lightInfo);
 }
 
 void Scene::load(Camera camera) {
     EntityCreateInfo info{};
     info.directory = "Resources/models/backpack";
     info.model = "backpack.obj";
-    info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable;
+    info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable | EntityCreateInfoFlags::HasPosition;
+    info.position = glm::vec3{ 0.0, 0.0, -20 };
     this->createEntity(&info);
+
+    EntityCreateInfo lightEntityInfo{};
+    lightEntityInfo.position = glm::vec3{ 0.0, 0.0, 10.0 };
+    lightEntityInfo.flags = EntityCreateInfoFlags::HasPosition;
+
+    size_t id = this->createEntity(&lightEntityInfo);
+
+    LightInfo lightInfo;
+    lightInfo.ambient = glm::vec4{ 0.0 };
+    lightInfo.entityId = id;
+    lightInfo.direction = glm::vec4{ 0.0 };
+    lightInfo.specular = glm::vec4{ 0.2, 0.2, 0.2, 0.2 };
+    lightInfo.diffuse = glm::vec4{ 0.5, 0.5, 0.5, 1 };
+
+    this->renderSystem.addLight(&lightInfo);
 
     this->camera = std::move(camera);
 }
@@ -86,7 +102,10 @@ void Scene::update(float delta_s, SceneUpdateResult* result) {
         *result |= SceneUpdateResultFlags::Quit;
     }
 
-    this->renderSystem.update();
+    this->renderSystem.update(this->entities.getPositionComponents());
+
+    auto cameraPositon = this->camera.getPosition();
+    std::cout << "Camera position: " << cameraPositon.x << "," << cameraPositon.y << "," << cameraPositon.z << std::endl;
 }
 
 void Scene::draw(SDL_Window* window) {
@@ -98,5 +117,5 @@ void Scene::draw(SDL_Window* window) {
 
     glm::mat4 viewProj = proj * view;
 
-    this->renderSystem.render(this->entities.getModelComponents(), viewProj);
+    this->renderSystem.render(this->entities.getPositionComponents(), this->entities.getModelComponents(), viewProj);
 }

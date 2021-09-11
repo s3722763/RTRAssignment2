@@ -16,13 +16,15 @@ typedef enum SceneUpdateResultFlags {
 
 typedef enum EntityCreateInfoFlags {
 	Renderable = 1 << 0,
-	HasModel = 1 << 1
+	HasModel = 1 << 1,
+	HasPosition = 1 << 2
 } EntityCreateInfoFlags;
 
 struct EntityCreateInfo {
 	uint64_t flags;
 	std::string directory;
 	std::string model;
+	glm::vec3 position;
 };
 
 class Scene {

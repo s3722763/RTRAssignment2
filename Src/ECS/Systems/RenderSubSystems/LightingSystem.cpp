@@ -7,7 +7,13 @@ void LightingSystem::createBuffer(unsigned int uniformBindingPoint) {
 	lightDataUniformBlock.createBuffer(&this->lightData, SIZE, uniformBindingPoint);
 }
 
-void LightingSystem::update() {
+void LightingSystem::update(const std::vector<PositionComponent>* positions) {
+	for (auto i = 0; i < this->lightEntityIds.size(); i++) {
+		auto id = this->lightEntityIds.at(i);
+
+		this->lightData.lights.positions[i] = glm::vec4{ positions->at(id).WorldPosition, 1.0 };
+	}
+
 	this->lightDataUniformBlock.update(&this->lightData, SIZE);
 }
 
@@ -17,8 +23,9 @@ void LightingSystem::addLight(LightInfo* info) {
 	} else {
 		size_t i = this->lightData.numberLights;
 
+		this->lightEntityIds.push_back(std::move(info->entityId));
+
 		this->lightData.lights.ambients[i] = std::move(info->ambient);
-		this->lightData.lights.positions[i] = std::move(info->position);
 		this->lightData.lights.diffuses[i] = std::move(info->diffuse);
 		this->lightData.lights.directions[i] = std::move(info->direction);
 		this->lightData.lights.speculars[i] = std::move(info->specular);

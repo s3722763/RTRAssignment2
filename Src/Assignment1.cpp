@@ -106,6 +106,7 @@ void Application::run() {
 
         // Draw
         this->scene.draw(this->window);
+
         SDL_GL_SwapWindow(this->window);
     }
 }

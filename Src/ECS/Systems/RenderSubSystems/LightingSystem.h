@@ -3,11 +3,13 @@
 #include <glm/vec4.hpp>
 #include <glad/glad.h>
 #include "../../../Render/UniformBlock.h"
+#include "../../Components/PositionComponent.h"
+#include <vector>
 
 constexpr unsigned int MAX_LIGHTS = 10;
 
 struct LightInfo {
-	glm::vec4 position;
+	size_t entityId;
 	glm::vec4 ambient;
 	glm::vec4 diffuse;
 	glm::vec4 specular;
@@ -34,9 +36,10 @@ struct LightData {
 class LightingSystem {
 	LightData lightData;
 	UniformBlock<LightData> lightDataUniformBlock;
+	std::vector<size_t> lightEntityIds;
 
 public:
 	void createBuffer(unsigned int uniformBindingPoint);
-	void update();
+	void update(const std::vector<PositionComponent>* positions);
 	void addLight(LightInfo* info);
 };

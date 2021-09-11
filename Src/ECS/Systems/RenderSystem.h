@@ -22,6 +22,6 @@ public:
 
 	void addLight(LightInfo* info);
 
-	void update();
-	void render(const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj);
+	void update(const std::vector<PositionComponent>* positions);
+	void render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj);
 };
