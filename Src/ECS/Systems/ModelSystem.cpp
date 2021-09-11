@@ -94,6 +94,14 @@ void ModelSystem::processMesh(aiMesh* mesh, const aiScene* scene, ModelComponent
 	aiString path;
 	material->GetTexture(aiTextureType_DIFFUSE, 0, &path);
 	this->processTexture(modelComponent, path, TextureType::Diffuse, directory, loadedTextures);
+
+	// Specular texture
+	if (material->GetTextureCount(aiTextureType_SPECULAR) > 1 && material->GetTextureCount(aiTextureType_SPECULAR) != 0) {
+		std::cerr << "Material " << material->GetName().C_Str() << " contains more than 1 specular texture." << std::endl;
+	}
+
+	material->GetTexture(aiTextureType_SPECULAR, 0, &path);
+	this->processTexture(modelComponent, path, TextureType::Specular, directory, loadedTextures);
 }
 
 void ModelSystem::processTexture(ModelComponent* modelComponent, aiString path, TextureType type, const std::string& directory, std::map<std::string, GLuint>* loadedTextures) {
@@ -139,7 +147,15 @@ void ModelSystem::processTexture(ModelComponent* modelComponent, aiString path, 
 		}
 	}
 
-	modelComponent->meshes.diffuseTextures.push_back(textureID);
+	switch (type) {
+	case TextureType::Diffuse:
+		modelComponent->meshes.diffuseTextures.push_back(textureID);
+		break;
+	case TextureType::Specular:
+		modelComponent->meshes.specularTextures.push_back(textureID);
+		break;
+	}
+	
 }
 
 void ModelSystem::createVAO(ModelComponent* modelComponent, size_t id) {

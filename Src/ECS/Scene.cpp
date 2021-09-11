@@ -113,7 +113,7 @@ void Scene::update(float delta_s, SceneUpdateResult* result) {
     this->renderSystem.update(this->entities.getPositionComponents());
 
     auto cameraPositon = this->camera.getPosition();
-    std::cout << "Camera position: " << cameraPositon.x << "," << cameraPositon.y << "," << cameraPositon.z << std::endl;
+    //std::cout << "Camera position: " << cameraPositon.x << "," << cameraPositon.y << "," << cameraPositon.z << std::endl;
 }
 
 void Scene::draw(SDL_Window* window) {
@@ -125,5 +125,5 @@ void Scene::draw(SDL_Window* window) {
 
     glm::mat4 viewProj = proj * view;
 
-    this->renderSystem.render(this->entities.getPositionComponents(), this->entities.getModelComponents(), viewProj);
+    this->renderSystem.render(this->entities.getPositionComponents(), this->entities.getModelComponents(), viewProj, &this->camera);
 }

@@ -35,7 +35,7 @@ void RenderSystem::update(const std::vector<PositionComponent>* positions) {
     this->lightingSystem.update(positions);
 }
 
-void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj) {
+void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, Camera* camera) {
 	for (auto renderableId : this->renderableEntities) {
         const ModelComponent* model = &modelComponents->at(renderableId);
 
@@ -49,6 +49,7 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
         this->pipeline.use();
         this->pipeline.setMatrix4x4Uniform("viewProj", viewProj);
         this->pipeline.setMatrix4x4Uniform("model", modelMatrix);
+        this->pipeline.setVec3Uniform("viewPos", camera->getPosition());
         this->pipeline.bindUniformBlock("LightData", LIGHTING_SYSTEM_BINDING_POINT);
 
         GLuint vertexPosition = this->pipeline.getVertexAttribIndex("positionVert");
@@ -58,6 +59,10 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
         for (auto i = 0; i < model->meshes.VAO.size(); i++) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, model->meshes.diffuseTextures.at(i));
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, model->meshes.specularTextures.at(i));
+
             glBindVertexArray(model->meshes.VAO.at(i));
 
             glBindBuffer(GL_ARRAY_BUFFER, model->meshes.VertexBufferObjects.at(i));

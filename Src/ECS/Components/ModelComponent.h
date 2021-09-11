@@ -21,6 +21,7 @@ typedef struct MeshComponents {
 	std::vector<std::vector<GLuint>> indices;
 	// Assuming only one diffuse texture for a mesh
 	std::vector<TextureID> diffuseTextures;
+	std::vector<TextureID> specularTextures;
 
 	std::vector<GLuint> VAO;
 	std::vector<GLuint> VertexBufferObjects;

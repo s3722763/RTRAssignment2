@@ -4,6 +4,7 @@
 #include "../../Render/Pipeline.h"
 #include <sdl/SDL_video.h>
 #include "RenderSubSystems/LightingSystem.h"
+#include "../../Utility/Camera.h"
 
 class RenderSystem {
 	// TODO: Seperate vector for particles and other special renderable entities
@@ -23,5 +24,5 @@ public:
 	void addLight(LightInfo* info);
 
 	void update(const std::vector<PositionComponent>* positions);
-	void render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj);
+	void render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, Camera* camera);
 };
