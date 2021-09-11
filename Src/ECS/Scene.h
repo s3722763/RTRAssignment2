@@ -7,6 +7,7 @@
 #include <sdl/SDL_video.h>
 #include <queue>
 #include "Systems/RenderSystem.h"
+#include "Systems/MovementSystem.h"
 
 typedef uint64_t SceneUpdateResult;
 
@@ -17,14 +18,16 @@ typedef enum SceneUpdateResultFlags {
 typedef enum EntityCreateInfoFlags {
 	Renderable = 1 << 0,
 	HasModel = 1 << 1,
-	HasPosition = 1 << 2
+	HasPosition = 1 << 2,
+	Moves = 1 << 3
 } EntityCreateInfoFlags;
 
 struct EntityCreateInfo {
 	uint64_t flags;
 	std::string directory;
 	std::string model;
-	glm::vec3 position;
+	PositionComponent positionComponent;
+	MovementComponent movementComponent;
 };
 
 class Scene {
@@ -35,6 +38,7 @@ private:
 	// Systems
 	ModelSystem modelSystem;
 	RenderSystem renderSystem;
+	MovementSystem movementSystem;
 
 	size_t createEntity(EntityCreateInfo* info);
 

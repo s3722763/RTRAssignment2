@@ -19,17 +19,20 @@ size_t Scene::createEntity(EntityCreateInfo* info) {
     }
 
     if ((info->flags & EntityCreateInfoFlags::HasPosition) != 0) {
-        PositionComponent positionComponent{};
-        positionComponent.WorldPosition = std::move(info->position);
-        addEntityInfo.positionComponent = std::move(positionComponent);
+        addEntityInfo.positionComponent = std::move(info->positionComponent);
     }
 
+    addEntityInfo.movementComponent = std::move(info->movementComponent);
     // Store attributes
     size_t id = this->entities.addEntity(&addEntityInfo);
 
     // Pass ids for atttributes
     if ((info->flags & EntityCreateInfoFlags::Renderable) != 0) {
         this->renderSystem.addRenderableEntity(id);
+    }
+
+    if ((info->flags & EntityCreateInfoFlags::Moves) != 0) {
+        this->movementSystem.addEntity(id, 0);
     }
 
     return id;
@@ -43,12 +46,16 @@ void Scene::load(Camera camera) {
     EntityCreateInfo info{};
     info.directory = "Resources/models/backpack";
     info.model = "backpack.obj";
-    info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable | EntityCreateInfoFlags::HasPosition;
-    info.position = glm::vec3{ 0.0, 0.0, -20 };
+    info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable | EntityCreateInfoFlags::HasPosition | EntityCreateInfoFlags::Moves;
+    info.positionComponent.WorldPosition = glm::vec3{ 0.0, 0.0, -20 };
+    // Pitch, Yaw, Roll
+    glm::vec3 initialRotation = { 0.0f,  -glm::pi<float>() / 4, 0.0f };
+    info.positionComponent.rotation = initialRotation;
+    info.movementComponent.velocity = { 0, 0, -10 };
     this->createEntity(&info);
 
     EntityCreateInfo lightEntityInfo{};
-    lightEntityInfo.position = glm::vec3{ 0.0, 0.0, 10.0 };
+    lightEntityInfo.positionComponent.WorldPosition = glm::vec3{ 0.0, 0.0, 10.0 };
     lightEntityInfo.flags = EntityCreateInfoFlags::HasPosition;
 
     size_t id = this->createEntity(&lightEntityInfo);
@@ -102,6 +109,7 @@ void Scene::update(float delta_s, SceneUpdateResult* result) {
         *result |= SceneUpdateResultFlags::Quit;
     }
 
+    this->movementSystem.update(this->entities.getPositionComponents(), this->entities.getMovementComponents(), delta_s);
     this->renderSystem.update(this->entities.getPositionComponents());
 
     auto cameraPositon = this->camera.getPosition();

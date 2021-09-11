@@ -1,5 +1,6 @@
 #include "RenderSystem.h"
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 constexpr unsigned int LIGHTING_SYSTEM_BINDING_POINT = 0;
 
@@ -41,7 +42,9 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
         // Setup model matrix
         glm::mat4 modelMatrix{1.0};
         modelMatrix = glm::translate(modelMatrix, positions->at(renderableId).WorldPosition);
-
+       
+        // Rotate
+        modelMatrix = modelMatrix * glm::toMat4(positions->at(renderableId).rotation);
 
         this->pipeline.use();
         this->pipeline.setMatrix4x4Uniform("viewProj", viewProj);
