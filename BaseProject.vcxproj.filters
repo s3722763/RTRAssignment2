@@ -45,6 +45,9 @@
     <ClCompile Include="Src\ECS\Systems\MovementSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\ECS\Systems\RenderSubSystems\ParticleSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Assignment1.h">
@@ -89,11 +92,24 @@
     <ClInclude Include="Src\Utility\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Src\ECS\Systems\RenderSubSystems\ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\ECS\Components\ParticleComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\ECS\Components\ParticleEmitterComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Shaders\vertex.vert" />
-    <None Include="Resources\Shaders\fragment.frag" />
-    <None Include="Resources\Shaders\deferredFragment.frag" />
-    <None Include="Resources\Shaders\deferredVertex.vert" />
+    <None Include="Resources\Shaders\deferred.vert" />
+    <None Include="Resources\Shaders\lighting.frag" />
+    <None Include="Resources\Shaders\deferred.frag" />
+    <None Include="Resources\Shaders\lighting.vert" />
+    <None Include="Resources\Shaders\cube.vert" />
+    <None Include="Resources\Shaders\cube.frag" />
+    <None Include="Resources\Shaders\particle.frag" />
+    <None Include="Resources\Shaders\particle.vert" />
   </ItemGroup>
 </Project>

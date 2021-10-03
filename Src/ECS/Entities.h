@@ -4,11 +4,13 @@
 #include "Components/PositionComponent.h"
 #include "Components/MovementComponent.h"
 #include <queue>
+#include "Components/ParticleEmitterComponent.h"
 
 struct AddEntityInfo {
 	ModelComponent modelComponent;
 	PositionComponent positionComponent;
 	MovementComponent movementComponent;
+	ParticleEmitterComponent particleEmitterComponent;
 };
 
 class Entities {
@@ -20,6 +22,7 @@ class Entities {
 	std::vector<ModelComponent> models;
 	std::vector<PositionComponent> positions;
 	std::vector<MovementComponent> movementComponents;
+	std::vector<ParticleEmitterComponent> particleEmitterComponents;
 
 public:
 	size_t addEntity(AddEntityInfo* info);
@@ -27,4 +30,5 @@ public:
 	std::vector<ModelComponent>* getModelComponents();
 	std::vector<PositionComponent>* getPositionComponents();
 	std::vector<MovementComponent>* getMovementComponents();
+	std::vector<ParticleEmitterComponent>* getParticleEmitterComponents();
 };

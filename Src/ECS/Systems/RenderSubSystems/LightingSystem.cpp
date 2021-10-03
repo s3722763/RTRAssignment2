@@ -3,6 +3,10 @@
 
 constexpr size_t SIZE = sizeof(LightData);
 
+const std::vector<size_t>* LightingSystem::getLightEntities() {
+	return &this->lightEntityIds;
+}
+
 void LightingSystem::createBuffer(unsigned int uniformBindingPoint) {
 	lightDataUniformBlock.createBuffer(&this->lightData, SIZE, uniformBindingPoint);
 }

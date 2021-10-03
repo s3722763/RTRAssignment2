@@ -44,10 +44,12 @@ void Scene::init(Window* window) {
 
 void Scene::load(Camera camera) {
     EntityCreateInfo info{};
-    info.directory = "Resources/models/backpack";
-    info.model = "backpack.obj";
+    info.directory = "Resources/models/pinballmachine";
+    info.model = "untitled.obj";
+    //info.directory = "Resources/models/backpack";
+    //info.model = "backpack.obj";
     info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable | EntityCreateInfoFlags::HasPosition;
-    info.positionComponent.WorldPosition = glm::vec3{ 0.0, 0.0, -20 };
+    info.positionComponent.WorldPosition = glm::vec3{ 0.0, 0.0, 0.0 };
     // Pitch, Yaw, Roll
     glm::vec3 initialRotation = { 0.0f,  -glm::pi<float>() / 4, 0.0f };
     info.positionComponent.rotation = initialRotation;
@@ -55,21 +57,46 @@ void Scene::load(Camera camera) {
     this->createEntity(&info);
 
     EntityCreateInfo lightEntityInfo{};
-    lightEntityInfo.positionComponent.WorldPosition = glm::vec3{ 0.0, 0.0, 10.0 };
+    lightEntityInfo.positionComponent.WorldPosition = glm::vec3{ -10.0, 2.0, 0.0 };
     lightEntityInfo.flags = EntityCreateInfoFlags::HasPosition;
 
     size_t id = this->createEntity(&lightEntityInfo);
 
-    LightInfo lightInfo;
+    /*LightInfo lightInfo;
     lightInfo.ambient = glm::vec4{ 0.0 };
     lightInfo.entityId = id;
     lightInfo.direction = glm::vec4{ 0.0 };
     lightInfo.specular = glm::vec4{ 0.2, 0.2, 0.2, 0.2 };
     lightInfo.diffuse = glm::vec4{ 0.5, 0.5, 0.5, 1 };
 
-    this->renderSystem.addLight(&lightInfo);
+    this->renderSystem.addLight(&lightInfo);*/
 
     this->camera = std::move(camera);
+
+    ParticleEmitterComponent particleEmitterComponent;
+    particleEmitterComponent.ejectionAngle = 3.1415 / 10;
+    particleEmitterComponent.particlesGeneratedPerEmittion = 1000;
+    particleEmitterComponent.radius = 0.2;
+    particleEmitterComponent.type = ParticleEmitterType::Smoke;
+    particleEmitterComponent.timeToLiveDistribution = std::uniform_real_distribution<float>(0, 1);
+    particleEmitterComponent.timeBetweenEjections = 0.02;
+    particleEmitterComponent.timeToNextEmittion = 1;
+    particleEmitterComponent.velocityDistribution = std::uniform_real_distribution<float>(1, 10);
+
+    PositionComponent positionComponent;
+    positionComponent.rotation = { 0, 0, 0 };
+    positionComponent.WorldPosition = { 0, 0, 0 };
+
+    AddEntityInfo addEntityInfo;
+    addEntityInfo.positionComponent = std::move(positionComponent);
+    addEntityInfo.particleEmitterComponent = std::move(particleEmitterComponent);
+
+    id = this->entities.addEntity(&addEntityInfo);
+    this->renderSystem.addParticleEmitter(id);
+
+    //addEntityInfo.positionComponent.WorldPosition = glm::vec3{ 10.0, 2.0, 0.0 };
+    //id = this->entities.addEntity(&addEntityInfo);
+    //this->renderSystem.addParticleEmitter(id);
 }
 
 void Scene::update(float delta_s, SceneUpdateResult* result) {
@@ -110,7 +137,7 @@ void Scene::update(float delta_s, SceneUpdateResult* result) {
     }
 
     this->movementSystem.update(this->entities.getPositionComponents(), this->entities.getMovementComponents(), delta_s);
-    this->renderSystem.update(this->entities.getPositionComponents());
+    this->renderSystem.update(this->entities.getPositionComponents(), this->entities.getParticleEmitterComponents(), delta_s);
 
     auto cameraPositon = this->camera.getPosition();
     //std::cout << "Camera position: " << cameraPositon.x << "," << cameraPositon.y << "," << cameraPositon.z << std::endl;
@@ -125,5 +152,5 @@ void Scene::draw(SDL_Window* window) {
 
     glm::mat4 viewProj = proj * view;
 
-    this->renderSystem.render(this->entities.getPositionComponents(), this->entities.getModelComponents(), viewProj, &this->camera);
+    this->renderSystem.render(this->entities.getPositionComponents(), this->entities.getModelComponents(), viewProj, view, &this->camera);
 }

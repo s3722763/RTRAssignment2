@@ -181,6 +181,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <ClCompile Include="Src\ECS\Systems\ModelSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\MovementSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\RenderSubSystems\LightingSystem.cpp" />
+    <ClCompile Include="Src\ECS\Systems\RenderSubSystems\ParticleSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\RenderSystem.cpp" />
     <ClCompile Include="Src\Render\Pipeline.cpp" />
     <ClCompile Include="Src\Utility\Camera.cpp" />
@@ -189,12 +190,15 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <ClInclude Include="Src\Assignment1.h" />
     <ClInclude Include="Src\ECS\Components\ModelComponent.h" />
     <ClInclude Include="Src\ECS\Components\MovementComponent.h" />
+    <ClInclude Include="Src\ECS\Components\ParticleComponent.h" />
+    <ClInclude Include="Src\ECS\Components\ParticleEmitterComponent.h" />
     <ClInclude Include="Src\ECS\Components\PositionComponent.h" />
     <ClInclude Include="Src\ECS\Entities.h" />
     <ClInclude Include="Src\ECS\Scene.h" />
     <ClInclude Include="Src\ECS\Systems\ModelSystem.h" />
     <ClInclude Include="Src\ECS\Systems\MovementSystem.h" />
     <ClInclude Include="Src\ECS\Systems\RenderSubSystems\LightingSystem.h" />
+    <ClInclude Include="Src\ECS\Systems\RenderSubSystems\ParticleSystem.h" />
     <ClInclude Include="Src\ECS\Systems\RenderSystem.h" />
     <ClInclude Include="Src\Render\Pipeline.h" />
     <ClInclude Include="Src\Render\UniformBlock.h" />
@@ -202,10 +206,14 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <ClInclude Include="Src\Utility\Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Shaders\deferredFragment.frag" />
-    <None Include="Resources\Shaders\deferredVertex.vert" />
-    <None Include="Resources\Shaders\fragment.frag" />
-    <None Include="Resources\Shaders\vertex.vert" />
+    <None Include="Resources\Shaders\cube.frag" />
+    <None Include="Resources\Shaders\cube.vert" />
+    <None Include="Resources\Shaders\deferred.frag" />
+    <None Include="Resources\Shaders\lighting.vert" />
+    <None Include="Resources\Shaders\lighting.frag" />
+    <None Include="Resources\Shaders\deferred.vert" />
+    <None Include="Resources\Shaders\particle.frag" />
+    <None Include="Resources\Shaders\particle.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

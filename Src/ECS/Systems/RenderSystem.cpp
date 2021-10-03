@@ -19,6 +19,51 @@ const std::array<glm::vec2, 4> QUAD_TEX_COORDS = {
 };
 
 
+std::array<glm::vec3, 36> ORIGINAL_SQUARE_VERTICES = {
+    // Front
+    glm::vec3{0, 0, 0},
+    glm::vec3{1, 0, 0},
+    glm::vec3{1, 1, 0},
+    glm::vec3{1, 1, 0},
+    glm::vec3{0, 1, 0},
+    glm::vec3{0, 0, 0},
+    // Right
+    glm::vec3{1, 0, 0},
+    glm::vec3{1, 0, -1},
+    glm::vec3{1, 1, -1},
+    glm::vec3{1, 1, -1},
+    glm::vec3{1, 1, 0},
+    glm::vec3{1, 0, 0},
+    // Back
+    glm::vec3{1, 0, -1},
+    glm::vec3{0, 0, -1},
+    glm::vec3{0, 1, -1},
+    glm::vec3{0, 1, -1},
+    glm::vec3{1, 1, -1},
+    glm::vec3{1, 0, -1},
+    // Left
+    glm::vec3{0, 0, -1},
+    glm::vec3{0, 0, 0},
+    glm::vec3{0, 1, 0},
+    glm::vec3{0, 1, 0},
+    glm::vec3{0, 1, -1},
+    glm::vec3{0, 0, -1},
+    // Top
+    glm::vec3{0, 1, 0},
+    glm::vec3{1, 1, 0},
+    glm::vec3{1, 1, -1},
+    glm::vec3{1, 1, -1},
+    glm::vec3{0, 1, -1},
+    glm::vec3{0, 1, 0},
+    // Bottom
+    glm::vec3{0, 0, 0},
+    glm::vec3{0, 0, -1},
+    glm::vec3{1, 0, -1},
+    glm::vec3{1, 0, -1},
+    glm::vec3{1, 0, 0},
+    glm::vec3{0, 0, 0}
+};
+
 void RenderSystem::initFramebuffers(Window* window) {
     glGenFramebuffers(1, &this->gBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
@@ -69,20 +114,27 @@ void RenderSystem::init(Window* window) {
     this->initFramebuffers(window);
 
     PipelineCreateInfo info{};
-    info.fragmentShaderPath = "Resources/Shaders/fragment.frag";
-    info.vertexShaderPath = "Resources/Shaders/deferredVertex.vert";
+    info.fragmentShaderPath = "Resources/Shaders/lighting.frag";
+    info.vertexShaderPath = "Resources/Shaders/lighting.vert";
     info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
     this->lightingPipeline.init(&info);
 
     //PipelineCreateInfo info{};
-    info.fragmentShaderPath = "Resources/Shaders/deferredFragment.frag";
-    info.vertexShaderPath = "Resources/Shaders/vertex.vert";
+    info.fragmentShaderPath = "Resources/Shaders/deferred.frag";
+    info.vertexShaderPath = "Resources/Shaders/deferred.vert";
     info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
     this->gBufferPipeline.init(&info);
+
+    info.fragmentShaderPath = "Resources/Shaders/cube.frag";
+    info.vertexShaderPath = "Resources/Shaders/cube.vert";
+    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
+    this->lightCubePipeline.init(&info);
 
     this->lightingSystem.createBuffer(LIGHTING_SYSTEM_BINDING_POINT);
     
     this->quad.init();
+    this->cube.init();
+    this->particleSystem.init();
 }
 
 void RenderSystem::addRenderableEntity(size_t id) {
@@ -98,39 +150,48 @@ void RenderSystem::removeRenderableEntity(size_t id) {
 	}
 }
 
+void RenderSystem::addParticleEmitter(size_t id) {
+    this->particleSystem.addEmitter(id);
+}
+
 void RenderSystem::addLight(LightInfo* info) {
     this->lightingSystem.addLight(info);
 }
 
-void RenderSystem::update(const std::vector<PositionComponent>* positions) {
+void RenderSystem::update(const std::vector<PositionComponent>* positions, std::vector<ParticleEmitterComponent>* particleEmmitters, float delta_s) {
     this->lightingSystem.update(positions);
+    this->particleSystem.update(positions, particleEmmitters, delta_s);
 }
 
-void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, Camera* camera) {  
+void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, glm::mat4 view, Camera* camera) {  
     // GEOMETRY PART OF DEFERRED PIPELINE
     glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    this->particleSystem.render(positions, viewProj, view);
+
+    this->gBufferPipeline.use();
+    this->gBufferPipeline.setMatrix4x4Uniform("viewProj", viewProj);
+
+    GLuint vertexPosition = this->gBufferPipeline.getVertexAttribIndex("positionVert");
+    GLuint texCoordPosition = this->gBufferPipeline.getVertexAttribIndex("texCoordVert");
+    GLuint normalPosition = this->gBufferPipeline.getVertexAttribIndex("normalVert");
 
     for (auto renderableId : this->renderableEntities) {
         const ModelComponent* model = &modelComponents->at(renderableId);
 
         // Setup model matrix
-        glm::mat4 modelMatrix{1.0};
-        modelMatrix = glm::translate(modelMatrix, positions->at(renderableId).WorldPosition);
-       
-        // Rotate
-        modelMatrix = modelMatrix * glm::toMat4(positions->at(renderableId).rotation);
-
-        this->gBufferPipeline.use();
-        this->gBufferPipeline.setMatrix4x4Uniform("viewProj", viewProj);
-        this->gBufferPipeline.setMatrix4x4Uniform("model", modelMatrix);
-
-        GLuint vertexPosition = this->gBufferPipeline.getVertexAttribIndex("positionVert");
-        GLuint texCoordPosition = this->gBufferPipeline.getVertexAttribIndex("texCoordVert");
-        GLuint normalPosition = this->gBufferPipeline.getVertexAttribIndex("normalVert");
-
         for (auto i = 0; i < model->meshes.VAO.size(); i++) {
+            glm::mat4 modelMatrix = modelComponents->at(renderableId).meshes.modelMatrixes.at(i);
+            //glm::mat4 modelMatrix{ 1.0 };
+            //modelMatrix = glm::translate(modelMatrix, positions->at(renderableId).WorldPosition);
+            
+            // Rotate
+            //modelMatrix = modelMatrix * glm::toMat4(positions->at(renderableId).rotation);
+
+            this->gBufferPipeline.setMatrix4x4Uniform("model", modelMatrix);
+
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, model->meshes.diffuseTextures.at(i));
 
@@ -177,6 +238,27 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
     glBindVertexArray(this->quad.VAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, 2048, 1152, 0, 0, 2048, 1152, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Draw light cubes
+    this->lightCubePipeline.use();
+    this->lightCubePipeline.setMatrix4x4Uniform("viewProj", viewProj);
+    auto lightIds = lightingSystem.getLightEntities();
+    glBindVertexArray(this->cube.VAO);
+
+    for (auto& id : *lightIds) {
+        glm::mat4 modelMatrix(1.0);
+        modelMatrix = glm::translate(modelMatrix, positions->at(id).WorldPosition);
+        this->lightCubePipeline.setMatrix4x4Uniform("model", modelMatrix);
+       
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    glBindVertexArray(0);
 }
 
 void Quad::init() {
@@ -197,4 +279,22 @@ void Quad::init() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(QUAD_TEX_COORDS), &QUAD_TEX_COORDS, GL_STATIC_DRAW);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
+
+    glBindVertexArray(0);
+}
+
+void Cube::init() {
+    glGenVertexArrays(1, &this->VAO);
+    GLuint buffers[1];
+
+    glGenBuffers(1, buffers);
+    this->VertexBuffer = buffers[0];
+    glBindVertexArray(this->VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->VertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ORIGINAL_SQUARE_VERTICES), &ORIGINAL_SQUARE_VERTICES, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
+
+    glBindVertexArray(0);
 }

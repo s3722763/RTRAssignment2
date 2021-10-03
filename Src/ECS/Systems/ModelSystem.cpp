@@ -31,7 +31,7 @@ ModelComponent ModelSystem::addModel(const std::string& directory, const std::st
 void ModelSystem::processNode(aiNode* node, const aiScene* scene, ModelComponent* modelComponent, const std::string& directory, std::map<std::string, GLuint>* loadedTextures) {
 	for (auto i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		this->processMesh(mesh, scene, modelComponent, directory, loadedTextures);
+		this->processMesh(mesh, node, scene, modelComponent, directory, loadedTextures);
 	}
 
 	for (auto i = 0; i < node->mNumChildren; i++) {
@@ -39,7 +39,7 @@ void ModelSystem::processNode(aiNode* node, const aiScene* scene, ModelComponent
 	}
 }
 
-void ModelSystem::processMesh(aiMesh* mesh, const aiScene* scene, ModelComponent* modelComponent, const std::string& directory, std::map<std::string, GLuint>* loadedTextures) {
+void ModelSystem::processMesh(aiMesh* mesh, const aiNode* node, const aiScene* scene, ModelComponent* modelComponent, const std::string& directory, std::map<std::string, GLuint>* loadedTextures) {
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec3> tangents;
@@ -91,6 +91,13 @@ void ModelSystem::processMesh(aiMesh* mesh, const aiScene* scene, ModelComponent
 		std::cerr << "Material " << material->GetName().C_Str() << " contains more than 1 diffuse texture." << std::endl;
 	}
 
+	// 
+	/*for (int i = 0; i < material->GetTextureCount(aiTextureType_DIFFUSE); i++) {
+		aiString a;
+		material->GetTexture(aiTextureType_DIFFUSE, 0, &a);
+		std::cout << a.C_Str() << std::endl;
+	}*/
+
 	aiString path;
 	material->GetTexture(aiTextureType_DIFFUSE, 0, &path);
 	this->processTexture(modelComponent, path, TextureType::Diffuse, directory, loadedTextures);
@@ -102,13 +109,35 @@ void ModelSystem::processMesh(aiMesh* mesh, const aiScene* scene, ModelComponent
 
 	material->GetTexture(aiTextureType_SPECULAR, 0, &path);
 	this->processTexture(modelComponent, path, TextureType::Specular, directory, loadedTextures);
+
+	// Store model matrix
+	auto mat = node->mTransformation;
+
+	glm::mat4 matrix = {
+		mat.a1, mat.a2, mat.a3, mat.a4,
+		mat.b1, mat.b2, mat.b3, mat.b4,
+		mat.c1, mat.c2, mat.c3, mat.c4,
+		mat.d1, mat.d2, mat.d3, mat.d4
+	};
+
+	matrix = glm::transpose(matrix);
+
+	float factor = 0;
+
+	/*for (int i = 0; i < scene->mMetaData->mNumProperties; i++) {
+		std::cout << scene->mMetaData->mKeys[i].C_Str() << std::endl;
+	}*/
+
+	//scene->mMetaData->Get("OriginalUnitScaleFactor", factor);
+
+	modelComponent->meshes.modelMatrixes.push_back(matrix);
 }
 
 void ModelSystem::processTexture(ModelComponent* modelComponent, aiString path, TextureType type, const std::string& directory, std::map<std::string, GLuint>* loadedTextures) {
 	std::string fullPath = directory;
 	fullPath = fullPath.append("/").append(path.C_Str());
 
-	GLuint textureID;
+	GLuint textureID; 
 	auto stored	= loadedTextures->find(fullPath);
 
 	if (stored != loadedTextures->end()) {

@@ -6,12 +6,21 @@
 #include "RenderSubSystems/LightingSystem.h"
 #include "../../Utility/Camera.h"
 #include "../../Utility/Window.h"
+#include "RenderSubSystems/ParticleSystem.h"
 
 struct Quad {
 public:
 	GLuint VAO;
 	GLuint VertexBuffer;
 	GLuint TexCoordBuffer;
+
+	void init();
+};
+
+struct Cube {
+public:
+	GLuint VAO;
+	GLuint VertexBuffer;
 
 	void init();
 };
@@ -24,9 +33,12 @@ private:
 	// Standard pipeline
 	Pipeline lightingPipeline;
 	Pipeline gBufferPipeline;
+	// Pipeline for light cubes
+	Pipeline lightCubePipeline;
 
 	// Subsystems
 	LightingSystem lightingSystem;
+	ParticleSystem particleSystem;
 
 	// Framebuffers
 	GLuint gBuffer;
@@ -37,6 +49,7 @@ private:
 
 	// Deferred Rendering quad
 	Quad quad;
+	Cube cube;
 
 	void initFramebuffers(Window* window);
 public:
@@ -45,8 +58,10 @@ public:
 	void addRenderableEntity(size_t id);
 	void removeRenderableEntity(size_t id);
 
+	void addParticleEmitter(size_t id);
+
 	void addLight(LightInfo* info);
 
-	void update(const std::vector<PositionComponent>* positions);
-	void render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, Camera* camera);
+	void update(const std::vector<PositionComponent>* positions, std::vector<ParticleEmitterComponent>* particleEmmitters, float delta_s);
+	void render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, glm::mat4 view, Camera* camera);
 };

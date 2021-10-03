@@ -26,7 +26,7 @@ struct Lights {
 
 struct LightData {
 	Lights lights;
-	GLfloat ambientStrength{ 0.1f };
+	GLfloat ambientStrength{ 1.0f };
 	GLuint numberLights{ 0 };
 	// Need these for memory alignment as floats must be in groups of 16 bytes
 	GLfloat temp1 = { 0.0f };
@@ -39,6 +39,7 @@ class LightingSystem {
 	std::vector<size_t> lightEntityIds;
 
 public:
+	const std::vector<size_t>* getLightEntities();
 	void createBuffer(unsigned int uniformBindingPoint);
 	void update(const std::vector<PositionComponent>* positions);
 	void addLight(LightInfo* info);

@@ -3,6 +3,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glad/glad.h>
+#include <glm/mat4x4.hpp>
 
 typedef GLuint TextureID;
 
@@ -22,6 +23,8 @@ typedef struct MeshComponents {
 	// Assuming only one diffuse texture for a mesh
 	std::vector<TextureID> diffuseTextures;
 	std::vector<TextureID> specularTextures;
+
+	std::vector<glm::mat4> modelMatrixes;
 
 	std::vector<GLuint> VAO;
 	std::vector<GLuint> VertexBufferObjects;
