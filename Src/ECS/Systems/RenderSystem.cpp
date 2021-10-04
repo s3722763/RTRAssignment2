@@ -2,6 +2,8 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <iostream>
+#include <string_view>
+#include <stb/stb_image.h>
 constexpr unsigned int LIGHTING_SYSTEM_BINDING_POINT = 0;
 
 const std::array<glm::vec3, 4> QUAD_VERTICES = {
@@ -17,7 +19,6 @@ const std::array<glm::vec2, 4> QUAD_TEX_COORDS = {
     glm::vec2{1.0f, 1.0f},
     glm::vec2{1.0f, 0.0f}
 };
-
 
 std::array<glm::vec3, 36> ORIGINAL_SQUARE_VERTICES = {
     // Front
@@ -62,6 +63,60 @@ std::array<glm::vec3, 36> ORIGINAL_SQUARE_VERTICES = {
     glm::vec3{1, 0, -1},
     glm::vec3{1, 0, 0},
     glm::vec3{0, 0, 0}
+};
+
+std::array<glm::vec3, 36> SKYBOX_VERTICES = {
+    glm::vec3{-1.0f, 1.0f, -1.0f},
+    glm::vec3{-1.0f, -1.0f, -1.0f},
+    glm::vec3{1.0f, -1.0f, -1.0f},
+    glm::vec3{1.0f, -1.0f, -1.0f},
+    glm::vec3{1.0f, 1.0f, -1.0f},
+    glm::vec3{-1.0f, 1.0f, -1.0f},
+
+    glm::vec3{-1.0f, -1.0f, 1.0f},
+    glm::vec3{-1.0f, -1.0f, -1.0f},
+    glm::vec3{-1.0f, 1.0f, -1.0f},
+    glm::vec3{-1.0f, 1.0f, -1.0f},
+    glm::vec3{-1.0f, 1.0f, 1.0f},
+    glm::vec3{-1.0f, -1.0f, 1.0f},
+
+    glm::vec3{1.0f, -1.0f, -1.0f},
+    glm::vec3{1.0f, -1.0f, 1.0f},
+    glm::vec3{1.0f, 1.0f, 1.0f},
+    glm::vec3{1.0f, 1.0f, 1.0f},
+    glm::vec3{1.0f, 1.0f, -1.0f},
+    glm::vec3{1.0f, -1.0f, -1.0f},
+
+    glm::vec3{-1.0f, -1.0f, 1.0f},
+    glm::vec3{-1.0f, 1.0f, 1.0f},
+    glm::vec3{1.0f, 1.0f, 1.0f},
+    glm::vec3{1.0f, 1.0f, 1.0f},
+    glm::vec3{1.0f, -1.0f, 1.0f},
+    glm::vec3{-1.0f, -1.0f, 1.0f},
+
+    glm::vec3{-1.0f, 1.0f, -1.0f},
+    glm::vec3{1.0f, 1.0f, -1.0f},
+    glm::vec3{1.0f, 1.0f, 1.0f},
+    glm::vec3{1.0f, 1.0f, 1.0f},
+    glm::vec3{-1.0f, 1.0f, 1.0f},
+    glm::vec3{-1.0f, 1.0f, -1.0f},
+
+    glm::vec3{-1.0f, -1.0f, -1.0f},
+    glm::vec3{-1.0f, -1.0f, 1.0f},
+    glm::vec3{1.0f, -1.0f, -1.0f},
+    glm::vec3{1.0f, -1.0f, -1.0f},
+    glm::vec3{-1.0f, -1.0f, 1.0f},
+    glm::vec3{1.0f, -1.0f, 1.0f}
+};
+
+
+std::array<std::string, 6> skyboxFaces = {
+    "Resources/Skybox/right.jpg",
+    "Resources/Skybox/left.jpg",
+    "Resources/Skybox/top.jpg",
+    "Resources/Skybox/bottom.jpg",
+    "Resources/Skybox/front.jpg",
+    "Resources/Skybox/back.jpg",
 };
 
 void RenderSystem::initFramebuffers(Window* window) {
@@ -110,6 +165,46 @@ void RenderSystem::initFramebuffers(Window* window) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void RenderSystem::loadSkybox() {
+    stbi_set_flip_vertically_on_load(false);
+    glGenTextures(1, &this->skyboxTextureId);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, this->skyboxTextureId);
+
+    int width, height, numberChannels;
+
+    for (auto i = 0; i < skyboxFaces.size(); i++) {
+        unsigned char* data = stbi_load(skyboxFaces[i].c_str(), &width, &height, &numberChannels, 0);
+
+        if (data) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        } else {
+            std::cout << "COULD NOT LOAD TEXTURE: " << skyboxFaces[i] << std::endl;
+        }
+
+        stbi_image_free(data);
+    }
+    stbi_set_flip_vertically_on_load(true);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glGenVertexArrays(1, &this->skyboxVAO);
+    glGenBuffers(1, &this->skyboxVBO);
+
+    glBindVertexArray(this->skyboxVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SKYBOX_VERTICES), SKYBOX_VERTICES.data(), GL_STATIC_DRAW);
+    GLuint vertexPos = this->skyboxPipeline.getVertexAttribIndex("vertexPos");
+    glEnableVertexAttribArray(vertexPos);
+    glVertexAttribPointer(vertexPos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
+
+    glBindVertexArray(0);
+}
+
 void RenderSystem::init(Window* window) {
     this->initFramebuffers(window);
 
@@ -130,7 +225,14 @@ void RenderSystem::init(Window* window) {
     info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
     this->lightCubePipeline.init(&info);
 
+    info.fragmentShaderPath = "Resources/Shaders/skybox.frag";
+    info.vertexShaderPath = "Resources/Shaders/skybox.vert";
+    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
+    this->skyboxPipeline.init(&info);
+
     this->lightingSystem.createBuffer(LIGHTING_SYSTEM_BINDING_POINT);
+
+    this->loadSkybox();
     
     this->quad.init();
     this->cube.init();
@@ -163,12 +265,12 @@ void RenderSystem::update(const std::vector<PositionComponent>* positions, std::
     this->particleSystem.update(positions, particleEmmitters, delta_s);
 }
 
-void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, glm::mat4 view, Camera* camera) {  
+void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, glm::mat4 view, glm::mat4 proj, Camera* camera, int width, int height) {
     // GEOMETRY PART OF DEFERRED PIPELINE
     glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
+
     this->particleSystem.render(positions, viewProj, view);
 
     this->gBufferPipeline.use();
@@ -219,6 +321,7 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
 	}
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // LIGHTING PART OF DEFERRED PIPELINE
     this->lightingPipeline.use();
     this->lightingPipeline.setIntUniform("gPosition", 0);
@@ -241,7 +344,7 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, 2048, 1152, 0, 0, 2048, 1152, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Draw light cubes
@@ -259,6 +362,21 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
     }
 
     glBindVertexArray(0);
+
+    // Draw skybox
+    glDepthFunc(GL_LEQUAL);
+    this->skyboxPipeline.use();
+    //this->skyboxPipeline.setMatrix4x4Uniform("viewProj", viewProj);
+    glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
+    glm::mat4 skyboxViewProj = proj * skyboxView;
+    this->skyboxPipeline.setMatrix4x4Uniform("viewProj", skyboxViewProj);
+    this->skyboxPipeline.setIntUniform("skybox", 0);
+    glBindVertexArray(this->skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, this->skyboxTextureId);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS);
 }
 
 void Quad::init() {

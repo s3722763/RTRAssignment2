@@ -152,5 +152,5 @@ void Scene::draw(SDL_Window* window) {
 
     glm::mat4 viewProj = proj * view;
 
-    this->renderSystem.render(this->entities.getPositionComponents(), this->entities.getModelComponents(), viewProj, view, &this->camera);
+    this->renderSystem.render(this->entities.getPositionComponents(), this->entities.getModelComponents(), viewProj, view, proj, &this->camera, width, height);
 }

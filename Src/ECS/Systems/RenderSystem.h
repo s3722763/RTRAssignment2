@@ -35,6 +35,7 @@ private:
 	Pipeline gBufferPipeline;
 	// Pipeline for light cubes
 	Pipeline lightCubePipeline;
+	Pipeline skyboxPipeline;
 
 	// Subsystems
 	LightingSystem lightingSystem;
@@ -47,11 +48,17 @@ private:
 	GLuint specularColorFrameBuffer;
 	GLuint rboDepth;
 
+	// Skybox
+	GLuint skyboxTextureId;
+	GLuint skyboxVAO;
+	GLuint skyboxVBO;
+
 	// Deferred Rendering quad
 	Quad quad;
 	Cube cube;
 
 	void initFramebuffers(Window* window);
+	void loadSkybox();
 public:
 	void init(Window* window);
 
@@ -63,5 +70,5 @@ public:
 	void addLight(LightInfo* info);
 
 	void update(const std::vector<PositionComponent>* positions, std::vector<ParticleEmitterComponent>* particleEmmitters, float delta_s);
-	void render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, glm::mat4 view, Camera* camera);
+	void render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, glm::mat4 view, glm::mat4 Proj, Camera* camera, int width, int height);
 };
