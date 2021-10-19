@@ -56,10 +56,21 @@ void Scene::addBall() {
     info.model = "ball.obj";
     info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable | EntityCreateInfoFlags::HasPosition | EntityCreateInfoFlags::Physicalised | EntityCreateInfoFlags::Moves;
     info.physicaliseFlags = PhysicsComponentFlags::AffectedByGravity | PhysicsComponentFlags::CircleBoundingBox;
-    info.positionComponent.WorldPosition = glm::vec3{ 0, 1, 0 };
+    info.positionComponent.WorldPosition = glm::vec3{ 1, 1, 0 };
 
     MovementComponent movementComponent{};
-    movementComponent.velocity = { 0.0, 0.0, -10.0 };
+    movementComponent.velocity = { -1.0, 0.0, 0.0 };
+    info.movementComponent = movementComponent;
+
+    this->createEntity(&info);
+
+    info.directory = "Resources/models/ball";
+    info.model = "ball.obj";
+    info.flags = EntityCreateInfoFlags::HasModel | EntityCreateInfoFlags::Renderable | EntityCreateInfoFlags::HasPosition | EntityCreateInfoFlags::Physicalised | EntityCreateInfoFlags::Moves;
+    info.physicaliseFlags = PhysicsComponentFlags::AffectedByGravity | PhysicsComponentFlags::CircleBoundingBox;
+    info.positionComponent.WorldPosition = glm::vec3{ -1, 1, 0 };
+
+    movementComponent.velocity = { 1.0, 0.0, 0.0 };
     info.movementComponent = movementComponent;
 
     this->createEntity(&info);

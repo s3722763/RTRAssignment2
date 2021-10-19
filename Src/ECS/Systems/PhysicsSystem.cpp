@@ -2,7 +2,10 @@
 #include <iostream>
 #include <glm/gtx/norm.hpp>
 
-constexpr glm::vec3 GRAVITY = { 0.0f,  0.0f, 0.0f };
+constexpr glm::vec3 GRAVITY = { 0.0f,  -2.0f, 0.0f };
+
+// For OBB
+// https://gamedev.stackexchange.com/questions/136073/how-does-one-calculate-the-surface-normal-in-2d-collisions
 
 void PhysicsSystem::updateSpatialStructure(const std::vector<PositionComponent>* positionComponents) {
 
@@ -148,8 +151,6 @@ PhysicsComponent PhysicsSystem::createAABB(CreatePhysicsComponentOptions* option
 	result.aabbPoints = std::move(points);
 
 	return result;
-	
-	return result;
 }
 
 void PhysicsSystem::resolveCollision(const PhysicsComponent* physicsComponent1, const PhysicsComponent* physicsComponent2, 
@@ -158,25 +159,36 @@ void PhysicsSystem::resolveCollision(const PhysicsComponent* physicsComponent1, 
 	//std::cout << "Collision" << std::endl;
 	auto& firstFlags = physicsComponent1->flags;
 	auto& secondFlags = physicsComponent2->flags;
-
-	glm::vec3 normal{};
 	
 	if ((firstFlags & PhysicsComponentFlags::CircleBoundingBox) && (secondFlags & PhysicsComponentFlags::CircleBoundingBox)) {
 		// Circle-Circle collision
-		
+		auto normal1 = this->calculateCircleCircleNormal(positionComponent1, positionComponent2);
+		movementComponent1->velocity = glm::reflect(movementComponent1->velocity, normal1);
+		auto normal2 = -normal1;
+		movementComponent2->velocity = glm::reflect(movementComponent2->velocity, normal2);
 	} else if ((firstFlags & PhysicsComponentFlags::CircleBoundingBox) && (secondFlags & PhysicsComponentFlags::AABB)) {
 		// Circle-AABB collision
-		normal = this->calculateCircleAABBNormal(positionComponent1, positionComponent2, physicsComponent2);
+		glm::vec3 normal = this->calculateCircleAABBNormal(positionComponent1, positionComponent2, physicsComponent2, physicsComponent1);
+
+		if (isnan(normal.x) && isnan(normal.y) && isnan(normal.z)) {
+			return;
+		}
 
 		// ASSUME: Only the ball movces
 		movementComponent1->velocity = glm::reflect(movementComponent1->velocity, normal);
 
 	} else if ((firstFlags & PhysicsComponentFlags::AABB) && (secondFlags & PhysicsComponentFlags::CircleBoundingBox)) {
 		// Circle-AABB collision
-		normal = this->calculateCircleAABBNormal(positionComponent2, positionComponent1, physicsComponent1);
+		glm::vec3 normal = this->calculateCircleAABBNormal(positionComponent2, positionComponent1, physicsComponent1, physicsComponent2);
+
+		if (isnan(normal.x) && isnan(normal.y) && isnan(normal.z)) {
+			return;
+		}
 
 		// ASSUME: Only the ball movces
-		movementComponent2->velocity = glm::reflect(movementComponent2->velocity, normal);
+		auto reflectionVelocity = glm::reflect(movementComponent2->velocity, normal);
+
+		movementComponent2->velocity = reflectionVelocity;
 	} else if ((firstFlags & PhysicsComponentFlags::OBB) && (secondFlags & PhysicsComponentFlags::CircleBoundingBox)) {
 		// Circle-OBB collision
 		// this->testCircleOBBCollision()
@@ -189,43 +201,50 @@ void PhysicsSystem::resolveCollision(const PhysicsComponent* physicsComponent1, 
 	//movementComponent2->velocity *= -1 / 1.2;
 }
 
-glm::vec3 PhysicsSystem::calculateCircleAABBNormal(const PositionComponent* circlePosition, const PositionComponent* aabbPosition, const PhysicsComponent* aabbPhysicsComponent) {
+glm::vec3 PhysicsSystem::calculateCircleAABBNormal(const PositionComponent* circlePosition, const PositionComponent* aabbPosition, 
+												   const PhysicsComponent* aabbPhysicsComponent, const PhysicsComponent* circlePhysicsComponent) {
 	// Find which part of the circle centre is not in the bounds of the AABB
 	glm::vec3 aabbMinPos = aabbPosition->WorldPosition + aabbPhysicsComponent->aabbPoints.min;
 	glm::vec3 aabbMaxPos = aabbPosition->WorldPosition + aabbPhysicsComponent->aabbPoints.max;
 	// This might only work for objects which the circle has two of the 3 axis in the same bounds as the AABB
 	// https://gamedev.net/forums/topic/649000-intersection-between-a-circle-and-an-aabb/5101896/
 	// Normal is the circle centre - collision location
-
-	glm::vec3 closestPoint{};
-
-	if (circlePosition->WorldPosition.x > aabbMaxPos.x) {
-		closestPoint.x = aabbMaxPos.x;
-	} else if (circlePosition->WorldPosition.x < aabbMinPos.x) {
-		closestPoint.x = aabbMinPos.x;
-	} else {
-		closestPoint.x = circlePosition->WorldPosition.x;
+	float halfX = (aabbPhysicsComponent->aabbPoints.max.x - aabbPhysicsComponent->aabbPoints.min.x) / 2;
+	float halfY = (aabbPhysicsComponent->aabbPoints.max.y - aabbPhysicsComponent->aabbPoints.min.y) / 2;
+	float halfZ = (aabbPhysicsComponent->aabbPoints.max.z - aabbPhysicsComponent->aabbPoints.min.z) / 2;
+	
+	auto distanceVector = circlePosition->WorldPosition - aabbPosition->WorldPosition;
+	float dx = glm::dot(distanceVector, { 1, 0, 0 });
+	if (dx > halfX) {
+		dx = halfX;
+	} else if (dx < -halfX) {
+		dx = -halfX;
 	}
 
-	if (circlePosition->WorldPosition.y > aabbMaxPos.y) {
-		closestPoint.y = aabbMaxPos.y;
-	} else if (circlePosition->WorldPosition.y < aabbMinPos.y) {
-		closestPoint.y = aabbMinPos.y;
-	} else {
-		closestPoint.y = circlePosition->WorldPosition.y;
+	float dy = glm::dot(distanceVector, { 0, 1, 0 });
+	if (dy > halfY) {
+		dy = halfY;
+	} else if (dy < -halfY) {
+		dy = -halfY;
 	}
 
-	if (circlePosition->WorldPosition.z > aabbMaxPos.z) {
-		closestPoint.z = aabbMaxPos.z;
-	} else if (circlePosition->WorldPosition.z < aabbMinPos.z) {
-		closestPoint.z = aabbMinPos.z;
-	} else {
-		closestPoint.z = circlePosition->WorldPosition.z;
+	float dz = glm::dot(distanceVector, { 0, 0, 1 });
+	if (dz > halfZ) {
+		dz = halfZ;
+	} else if (dz < -halfZ) {
+		dz = -halfZ;
 	}
 
-	glm::vec3 normal = circlePosition->WorldPosition - closestPoint;
+	glm::vec3 contactVector = aabbPosition->WorldPosition + (dx * glm::vec3{ 1, 0, 0 }) + (dy * glm::vec3{ 0, 1, 0 }) + (dz * glm::vec3{ 0, 0, 1 });
+	glm::vec3 normNotNormalised = circlePosition->WorldPosition - contactVector;
+	std::cout << normNotNormalised.x << ", " << normNotNormalised.y << ", " << normNotNormalised.z << std::endl;
+	glm::vec3 normalisedVector = glm::normalize(normNotNormalised);
+	
+	return normalisedVector;
+}
 
-	return glm::normalize(normal);
+glm::vec3 PhysicsSystem::calculateCircleCircleNormal(const PositionComponent* circleFrom, const PositionComponent* circleTo) {
+	return glm::normalize(circleFrom->WorldPosition - circleTo->WorldPosition);
 }
 
 void PhysicsSystem::addEntity(size_t id) {
@@ -246,7 +265,12 @@ void PhysicsSystem::update(const std::vector<PhysicsComponent>* physicComponents
 		// If not static
 		if ((physicComponents->at(id).flags & PhysicsComponentFlags::Static) == 0) {
 			oldPositions[id] = positionComponents->at(id).WorldPosition;
+
 			movementComponents->at(id).velocity += gravity;
+			if (!isnan(oldPositions[id].x) && isnan(movementComponents->at(id).velocity.x)) {
+				positionComponents->at(id).WorldPosition = oldPositions[id] + (oldPositions[id] * 0.002f);
+			}
+
 			positionComponents->at(id).WorldPosition += (movementComponents->at(id).velocity * delta_s);
 		}
 	}

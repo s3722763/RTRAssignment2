@@ -27,7 +27,9 @@ class PhysicsSystem {
 	void resolveCollision(const PhysicsComponent* physicsComponent1, const PhysicsComponent* physicsComponent2,
 						  const PositionComponent* positionComponent1, const PositionComponent* positionComponent2,
 						  MovementComponent* movementComponnet1, MovementComponent* movementComponent2);
-	glm::vec3 calculateCircleAABBNormal(const PositionComponent* circlePosition, const PositionComponent* aabbPosition, const PhysicsComponent* aabbPhysicsComponent2);
+	glm::vec3 calculateCircleAABBNormal(const PositionComponent* circlePosition, const PositionComponent* aabbPosition,  
+										const PhysicsComponent* aabbPhysicsComponent, const PhysicsComponent* cirlcePhysicsComponent);
+	glm::vec3 calculateCircleCircleNormal(const PositionComponent* circleFrom, const PositionComponent* circleTo);
 
 public:
 	void addEntity(size_t id);
