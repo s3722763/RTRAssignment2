@@ -36,6 +36,8 @@ private:
 	// Pipeline for light cubes
 	Pipeline lightCubePipeline;
 	Pipeline skyboxPipeline;
+	// Pipeline for shadows
+	Pipeline shadowGenerationPipeline;
 
 	// Subsystems
 	LightingSystem lightingSystem;
@@ -53,12 +55,23 @@ private:
 	GLuint skyboxVAO;
 	GLuint skyboxVBO;
 
+	// Shadows
+	GLuint shadowFrameBuffer;
+	GLuint shadowsDepthMap;
+
 	// Deferred Rendering quad
 	Quad quad;
 	Cube cube;
 
 	void initFramebuffers(Window* window);
 	void loadSkybox();
+
+	void drawScene(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions);
+
+	// Shadows
+	void setupShadows();
+	void generateShadows(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, glm::mat4 view, Camera* camera, int width, int height);
+
 public:
 	void init(Window* window);
 

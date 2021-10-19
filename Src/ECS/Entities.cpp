@@ -13,6 +13,7 @@ size_t Entities::addEntity(AddEntityInfo* info) {
         this->positions.resize(id + 1);
         this->movementComponents.resize(id + 1);
         this->particleEmitterComponents.resize(id + 1);
+        this->physicsComponents.resize(id + 1);
     }
 
     this->usedIds.push_back(id);
@@ -21,6 +22,7 @@ size_t Entities::addEntity(AddEntityInfo* info) {
     this->positions.at(id) = std::move(info->positionComponent);
     this->movementComponents.at(id) = std::move(info->movementComponent);
     this->particleEmitterComponents.at(id) = std::move(info->particleEmitterComponent);
+    this->physicsComponents.at(id) = std::move(info->physicsComponent);
 
     return id;
 }
@@ -39,4 +41,8 @@ std::vector<MovementComponent>* Entities::getMovementComponents() {
 
 std::vector<ParticleEmitterComponent>* Entities::getParticleEmitterComponents() {
     return &this->particleEmitterComponents;
+}
+
+std::vector<PhysicsComponent>* Entities::getPhysicsComponents() {
+    return &this->physicsComponents;
 }

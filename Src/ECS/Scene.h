@@ -9,6 +9,7 @@
 #include "Systems/RenderSystem.h"
 #include "Systems/MovementSystem.h"
 #include "../Utility/Window.h"
+#include "Systems/PhysicsSystem.h"
 
 typedef uint64_t SceneUpdateResult;
 
@@ -20,11 +21,13 @@ typedef enum EntityCreateInfoFlags {
 	Renderable = 1 << 0,
 	HasModel = 1 << 1,
 	HasPosition = 1 << 2,
-	Moves = 1 << 3
+	Moves = 1 << 3,
+	Physicalised = 1 << 4
 } EntityCreateInfoFlags;
 
 struct EntityCreateInfo {
 	uint64_t flags;
+	uint64_t physicaliseFlags;
 	std::string directory;
 	std::string model;
 	PositionComponent positionComponent;
@@ -40,9 +43,11 @@ private:
 	ModelSystem modelSystem;
 	RenderSystem renderSystem;
 	MovementSystem movementSystem;
+	PhysicsSystem physicsSystem;
 
 	size_t createEntity(EntityCreateInfo* info);
 
+	void addBall();
 public:
 	void init(Window* window);
 	void load(Camera camera);

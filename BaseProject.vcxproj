@@ -132,7 +132,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)\dll\$(PlatformTarget)\*.dll" "$(OutDir)"
-xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
+xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\Resources\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -170,7 +170,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)\dll\$(PlatformTarget)\*.dll" "$(OutDir)"
-xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
+xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\Resources\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -180,6 +180,7 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <ClCompile Include="Src\ECS\Scene.cpp" />
     <ClCompile Include="Src\ECS\Systems\ModelSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\MovementSystem.cpp" />
+    <ClCompile Include="Src\ECS\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\RenderSubSystems\LightingSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\RenderSubSystems\ParticleSystem.cpp" />
     <ClCompile Include="Src\ECS\Systems\RenderSystem.cpp" />
@@ -192,11 +193,13 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <ClInclude Include="Src\ECS\Components\MovementComponent.h" />
     <ClInclude Include="Src\ECS\Components\ParticleComponent.h" />
     <ClInclude Include="Src\ECS\Components\ParticleEmitterComponent.h" />
+    <ClInclude Include="Src\ECS\Components\PhysicsComponent.h" />
     <ClInclude Include="Src\ECS\Components\PositionComponent.h" />
     <ClInclude Include="Src\ECS\Entities.h" />
     <ClInclude Include="Src\ECS\Scene.h" />
     <ClInclude Include="Src\ECS\Systems\ModelSystem.h" />
     <ClInclude Include="Src\ECS\Systems\MovementSystem.h" />
+    <ClInclude Include="Src\ECS\Systems\PhysicsSystem.h" />
     <ClInclude Include="Src\ECS\Systems\RenderSubSystems\LightingSystem.h" />
     <ClInclude Include="Src\ECS\Systems\RenderSubSystems\ParticleSystem.h" />
     <ClInclude Include="Src\ECS\Systems\RenderSystem.h" />
@@ -214,6 +217,8 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\resources\"</Command>
     <None Include="Resources\Shaders\deferred.vert" />
     <None Include="Resources\Shaders\particle.frag" />
     <None Include="Resources\Shaders\particle.vert" />
+    <None Include="Resources\Shaders\shdaow.vert" />
+    <None Include="Resources\Shaders\shadow.frag" />
     <None Include="Resources\Shaders\skybox.frag" />
     <None Include="Resources\Shaders\skybox.vert" />
   </ItemGroup>

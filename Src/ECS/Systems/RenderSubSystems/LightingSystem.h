@@ -26,7 +26,7 @@ struct Lights {
 
 struct LightData {
 	Lights lights;
-	GLfloat ambientStrength{ 1.0f };
+	GLfloat ambientStrength{ 0.1f };
 	GLuint numberLights{ 0 };
 	// Need these for memory alignment as floats must be in groups of 16 bytes
 	GLfloat temp1 = { 0.0f };
@@ -43,4 +43,6 @@ public:
 	void createBuffer(unsigned int uniformBindingPoint);
 	void update(const std::vector<PositionComponent>* positions);
 	void addLight(LightInfo* info);
+
+	std::array<glm::mat4, MAX_LIGHTS> generateLightSpaceTransforms(const std::vector<PositionComponent>* positionComponents);
 };

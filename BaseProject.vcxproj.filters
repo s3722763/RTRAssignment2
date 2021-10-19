@@ -48,6 +48,9 @@
     <ClCompile Include="Src\ECS\Systems\RenderSubSystems\ParticleSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\ECS\Systems\PhysicsSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Assignment1.h">
@@ -101,6 +104,12 @@
     <ClInclude Include="Src\ECS\Components\ParticleEmitterComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Src\ECS\Systems\PhysicsSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\ECS\Components\PhysicsComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Shaders\deferred.vert" />
@@ -113,5 +122,7 @@
     <None Include="Resources\Shaders\particle.vert" />
     <None Include="Resources\Shaders\skybox.frag" />
     <None Include="Resources\Shaders\skybox.vert" />
+    <None Include="Resources\Shaders\shadow.frag" />
+    <None Include="Resources\Shaders\shdaow.vert" />
   </ItemGroup>
 </Project>
