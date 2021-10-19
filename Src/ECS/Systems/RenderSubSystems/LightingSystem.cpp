@@ -56,3 +56,32 @@ std::array<glm::mat4, MAX_LIGHTS> LightingSystem::generateLightSpaceTransforms(c
 
 	return lightSpaceTransforms;
 }
+
+std::vector<LightTransformInformation> LightingSystem::generateLightSpaceTransformsPoint(const std::vector<PositionComponent>* positionComponents) {
+	std::vector<LightTransformInformation> lightSpaceTransforms{};
+
+	size_t j = 0;
+	for (auto& lightId : this->lightEntityIds) {
+		auto direction = this->lightData.lights.directions[j];
+		if (direction.x == 0 && direction.y == 0 && direction.z == 0) {
+			// Point light
+			LightTransformInformation lightTransformInformation;
+			std::array<glm::mat4, 6> transforms;
+
+			transforms[0] = glm::lookAt(positionComponents->at(lightId).WorldPosition, positionComponents->at(lightId).WorldPosition + glm::vec3{ 1.0, 0.0, 0.0 }, glm::vec3{ 0.0, -1.0, 0.0 });
+			transforms[1] = glm::lookAt(positionComponents->at(lightId).WorldPosition, positionComponents->at(lightId).WorldPosition + glm::vec3{ -1.0, 0.0, 0.0 }, glm::vec3{ 0.0, -1.0, 0.0 });
+			transforms[2] = glm::lookAt(positionComponents->at(lightId).WorldPosition, positionComponents->at(lightId).WorldPosition + glm::vec3{ 0.0, 1.0, 0.0 }, glm::vec3{ 0.0, 0.0, 1.0 });
+			transforms[3] = glm::lookAt(positionComponents->at(lightId).WorldPosition, positionComponents->at(lightId).WorldPosition + glm::vec3{ 0.0, -1.0, 0.0 }, glm::vec3{ 0.0, 0.0, -1.0 });
+			transforms[4] = glm::lookAt(positionComponents->at(lightId).WorldPosition, positionComponents->at(lightId).WorldPosition + glm::vec3{ 0.0, 0.0, 1.0 }, glm::vec3{ 0.0, -1.0, 0.0 });
+			transforms[5] = glm::lookAt(positionComponents->at(lightId).WorldPosition, positionComponents->at(lightId).WorldPosition + glm::vec3{ 0.0, 0.0, -1.0 }, glm::vec3{ 0.0, -1.0, 0.0 });
+
+			lightTransformInformation.position = positionComponents->at(lightId).WorldPosition;
+			lightTransformInformation.transforms = transforms;
+			lightSpaceTransforms.push_back(lightTransformInformation);
+		}
+
+		j += 1;
+	}
+
+	return lightSpaceTransforms;
+}

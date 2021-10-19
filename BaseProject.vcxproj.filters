@@ -122,7 +122,8 @@
     <None Include="Resources\Shaders\particle.vert" />
     <None Include="Resources\Shaders\skybox.frag" />
     <None Include="Resources\Shaders\skybox.vert" />
-    <None Include="Resources\Shaders\shadow.frag" />
-    <None Include="Resources\Shaders\shdaow.vert" />
+    <None Include="Resources\Shaders\pointShadow.frag" />
+    <None Include="Resources\Shaders\pointShadow.vert" />
+    <None Include="Resources\Shaders\pointShadow.geom" />
   </ItemGroup>
 </Project>

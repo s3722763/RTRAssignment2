@@ -217,8 +217,9 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\Resources\"</Command>
     <None Include="Resources\Shaders\deferred.vert" />
     <None Include="Resources\Shaders\particle.frag" />
     <None Include="Resources\Shaders\particle.vert" />
-    <None Include="Resources\Shaders\shdaow.vert" />
-    <None Include="Resources\Shaders\shadow.frag" />
+    <None Include="Resources\Shaders\pointShadow.geom" />
+    <None Include="Resources\Shaders\pointShadow.vert" />
+    <None Include="Resources\Shaders\pointShadow.frag" />
     <None Include="Resources\Shaders\skybox.frag" />
     <None Include="Resources\Shaders\skybox.vert" />
   </ItemGroup>

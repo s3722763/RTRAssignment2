@@ -59,6 +59,9 @@ private:
 	GLuint shadowFrameBuffer;
 	GLuint shadowsDepthMap;
 
+	GLuint pointShadowFrameBuffer;
+	GLuint pointShadowDepthCube;
+
 	// Deferred Rendering quad
 	Quad quad;
 	Cube cube;
@@ -66,10 +69,11 @@ private:
 	void initFramebuffers(Window* window);
 	void loadSkybox();
 
-	void drawScene(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions);
+	void drawScene(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, bool genShadows);
 
 	// Shadows
 	void setupShadows();
+	void setupPointShadows();
 	void generateShadows(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, glm::mat4 view, Camera* camera, int width, int height);
 
 public:

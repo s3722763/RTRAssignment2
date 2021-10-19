@@ -10,10 +10,10 @@ constexpr unsigned int MAX_LIGHTS = 10;
 
 struct LightInfo {
 	size_t entityId;
-	glm::vec4 ambient;
-	glm::vec4 diffuse;
-	glm::vec4 specular;
-	glm::vec4 direction = glm::vec4{ 0.0f };
+	glm::vec4 ambient = glm::vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
+	glm::vec4 diffuse = glm::vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
+	glm::vec4 specular = glm::vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
+	glm::vec4 direction = glm::vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
 
 struct Lights {
@@ -33,6 +33,11 @@ struct LightData {
 	GLfloat temp2 = { 0.0f };
 };
 
+struct LightTransformInformation {
+	std::array<glm::mat4, 6> transforms;
+	glm::vec3 position;
+};
+
 class LightingSystem {
 	LightData lightData;
 	UniformBlock<LightData> lightDataUniformBlock;
@@ -45,4 +50,5 @@ public:
 	void addLight(LightInfo* info);
 
 	std::array<glm::mat4, MAX_LIGHTS> generateLightSpaceTransforms(const std::vector<PositionComponent>* positionComponents);
+	std::vector<LightTransformInformation> generateLightSpaceTransformsPoint(const std::vector<PositionComponent>* positionComponents);
 };

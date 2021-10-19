@@ -3,6 +3,7 @@
 #include <glm/gtx/norm.hpp>
 
 constexpr glm::vec3 GRAVITY = { 0.0f,  -2.0f, 0.0f };
+constexpr float FRICTION = -0.00f;
 
 // For OBB
 // https://gamedev.stackexchange.com/questions/136073/how-does-one-calculate-the-surface-normal-in-2d-collisions
@@ -266,7 +267,8 @@ void PhysicsSystem::update(const std::vector<PhysicsComponent>* physicComponents
 		if ((physicComponents->at(id).flags & PhysicsComponentFlags::Static) == 0) {
 			oldPositions[id] = positionComponents->at(id).WorldPosition;
 
-			movementComponents->at(id).velocity += gravity;
+			movementComponents->at(id).velocity += gravity + (movementComponents->at(id).velocity * FRICTION * delta_s);
+
 			if (!isnan(oldPositions[id].x) && isnan(movementComponents->at(id).velocity.x)) {
 				positionComponents->at(id).WorldPosition = oldPositions[id] + (oldPositions[id] * 0.002f);
 			}

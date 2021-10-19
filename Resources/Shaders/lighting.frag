@@ -11,6 +11,9 @@ uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
 
+uniform float far_plane;
+uniform samplerCube pointDepthMap; 
+
 struct Lights {
 	vec4[MAX_LIGHTS] positions;
 	vec4[MAX_LIGHTS] ambients;
@@ -59,6 +62,31 @@ vec3 getSpecular(vec3 pos, vec3 normal, float specIn) {
 	return result;
 }
 
+float calculateShadow(vec3 position) {
+	float shadow = 0;
+	float bias = 0.05;
+	float samples = 4.0;
+	float offset = 0.1;
+
+	vec3 fragToLight = position - lightData.lights.positions[0].xyz;
+	float currentDepth = length(fragToLight);
+
+	for (float x = -offset; x < offset; x += offset / (samples * 0.5)) {
+		for (float y = -offset; y < offset; y += offset / (samples * 0.5)) {
+			for (float z = -offset; z < offset; z += offset / (samples * 0.5)) {
+				float closestDepth = texture(pointDepthMap, fragToLight + vec3(x, y, z)).r;
+				closestDepth *= far_plane;
+
+				if (currentDepth - bias > closestDepth) {
+					shadow += 1.0;
+				}
+			}
+		}
+	}
+
+	return shadow / (samples * samples * samples);
+}
+
 void main() {
 	vec3 fragPos = texture(gPosition, texCoord).rgb;
 	vec3 normal = texture(gNormal, texCoord).rgb;
@@ -68,5 +96,8 @@ void main() {
 	vec3 ambient = albedo * lightData.ambientStrength;
 	vec3 diffuse = getDiffuse(fragPos, normal, albedo);
 	vec3 specular = getSpecular(fragPos, normal, spec);
-	color = vec4(diffuse + ambient + specular, 1.0);
+
+	float shadow = calculateShadow(fragPos);
+
+	color = vec4(ambient + ((1 - shadow) * (diffuse + specular)), 1.0);
 }

@@ -7,6 +7,7 @@
 constexpr unsigned int LIGHTING_SYSTEM_BINDING_POINT = 0;
 
 constexpr unsigned int SHADOW_DIMENSIONS = 1024;
+constexpr float SHADOW_FAR = 100.0f;
 
 const std::array<glm::vec3, 4> QUAD_VERTICES = {
     glm::vec3{-1.0f, 1.0f, 0.0f},
@@ -207,7 +208,7 @@ void RenderSystem::loadSkybox() {
     glBindVertexArray(0);
 }
 
-void RenderSystem::drawScene(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions) {
+void RenderSystem::drawScene(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, bool genShadows) {
     GLuint vertexPosition = pipeline->getVertexAttribIndex("positionVert");
     GLuint texCoordPosition = pipeline->getVertexAttribIndex("texCoordVert");
     GLuint normalPosition = pipeline->getVertexAttribIndex("normalVert");
@@ -225,26 +226,26 @@ void RenderSystem::drawScene(Pipeline* pipeline, const std::vector<ModelComponen
             //modelMatrix = modelMatrix * glm::toMat4(positions->at(renderableId).rotation);
 
             pipeline->setMatrix4x4Uniform("model", modelMatrix);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, model->meshes.diffuseTextures.at(i));
-
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, model->meshes.specularTextures.at(i));
-
             glBindVertexArray(model->meshes.VAO.at(i));
+            if (!genShadows) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, model->meshes.diffuseTextures.at(i));
 
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, model->meshes.specularTextures.at(i));
+
+                glBindBuffer(GL_ARRAY_BUFFER, model->meshes.TextureCoordBufferObjects.at(i));
+                glEnableVertexAttribArray(texCoordPosition);
+                glVertexAttribPointer(texCoordPosition, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
+
+                glBindBuffer(GL_ARRAY_BUFFER, model->meshes.NormalBufferObjects.at(i));
+                glEnableVertexAttribArray(normalPosition);
+                glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
+            }
+            
             glBindBuffer(GL_ARRAY_BUFFER, model->meshes.VertexBufferObjects.at(i));
             glEnableVertexAttribArray(vertexPosition);
             glVertexAttribPointer(vertexPosition, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
-
-            glBindBuffer(GL_ARRAY_BUFFER, model->meshes.TextureCoordBufferObjects.at(i));
-            glEnableVertexAttribArray(texCoordPosition);
-            glVertexAttribPointer(texCoordPosition, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), NULL);
-
-            glBindBuffer(GL_ARRAY_BUFFER, model->meshes.NormalBufferObjects.at(i));
-            glEnableVertexAttribArray(normalPosition);
-            glVertexAttribPointer(normalPosition, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
 
             // First specified texture in shader
             glDrawElements(GL_TRIANGLES, model->meshes.indices.at(i).size(), GL_UNSIGNED_INT, NULL);
@@ -265,9 +266,10 @@ void RenderSystem::setupShadows() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     PipelineCreateInfo info{};
-    info.fragmentShaderPath = "Resources/Shaders/shadow.frag";
-    info.vertexShaderPath = "Resources/Shaders/shadow.vert";
-    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
+    info.fragmentShaderPath = "Resources/Shaders/pointShadow.frag";
+    info.vertexShaderPath = "Resources/Shaders/pointShadow.vert";
+    info.geometryShaderPath = "Resources/Shaders/pointShadow.geom";
+    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader | PipelineCreateInfoFlags::GeometryShader);
     this->shadowGenerationPipeline.init(&info);
 
     // Bind depth buffer to texture
@@ -278,20 +280,56 @@ void RenderSystem::setupShadows() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void RenderSystem::setupPointShadows() {
+    glGenFramebuffers(1, &this->pointShadowFrameBuffer);
+    glGenTextures(1, &this->pointShadowDepthCube);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, this->pointShadowDepthCube);
+
+    for (int i = 0; i < 6; i++) {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_DIMENSIONS, SHADOW_DIMENSIONS, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, this->pointShadowFrameBuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, this->pointShadowDepthCube, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void RenderSystem::generateShadows(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, glm::mat4 view, Camera* camera, int width, int height) {
     // Ortho for direction, perspective for point
-    std::array<glm::mat4, MAX_LIGHTS> lightSpaceTransforms = this->lightingSystem.generateLightSpaceTransforms(positions);
+    const float near_plane = 1.0f;
+    const float far_plane = SHADOW_FAR;
+
+    glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, near_plane, far_plane);
+
+    std::vector<LightTransformInformation> allLightSpaceTransforms = this->lightingSystem.generateLightSpaceTransformsPoint(positions);
 
     glViewport(0, 0, SHADOW_DIMENSIONS, SHADOW_DIMENSIONS);
-    glBindFramebuffer(GL_FRAMEBUFFER, this->shadowFrameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, this->pointShadowFrameBuffer);
 
     glClear(GL_DEPTH_BUFFER_BIT);
     pipeline->use();
 
     // For each light
-    for (auto& lightSpaceMatrix : lightSpaceTransforms) {
-        pipeline->setMatrix4x4Uniform("lightSpaceMatrix", lightSpaceMatrix);
-        this->drawScene(pipeline, modelComponents, positions);
+    for (auto& lightSpaceTransforms : allLightSpaceTransforms) {
+        for (int i = 0; i < 6; i++) {
+            auto iStr = std::to_string(i);
+            std::string uniform = "shadowMatrices[" + iStr + "]";
+            auto matrix = shadowProj * lightSpaceTransforms.transforms[i];
+            pipeline->setMatrix4x4Uniform(uniform.c_str(), matrix);
+        }
+
+        pipeline->setFloatUniform("far_plane", far_plane);
+        pipeline->setVec3Uniform("lightPos", lightSpaceTransforms.position);
+        
+        this->drawScene(pipeline, modelComponents, positions, true);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -330,6 +368,7 @@ void RenderSystem::init(Window* window) {
     this->cube.init();
     this->particleSystem.init();
     this->setupShadows();
+    this->setupPointShadows();
 }
 
 void RenderSystem::addRenderableEntity(size_t id) {
@@ -359,7 +398,7 @@ void RenderSystem::update(const std::vector<PositionComponent>* positions, std::
 }
 
 void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, glm::mat4 view, glm::mat4 proj, Camera* camera, int width, int height) {
-    //this->generateShadows(&this->shadowGenerationPipeline, modelComponents, positions, view, camera, width, height);
+    this->generateShadows(&this->shadowGenerationPipeline, modelComponents, positions, view, camera, width, height);
     glViewport(0, 0, width, height);
     // GEOMETRY PART OF DEFERRED PIPELINE
     glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
@@ -371,7 +410,7 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
     this->gBufferPipeline.use();
     this->gBufferPipeline.setMatrix4x4Uniform("viewProj", viewProj);
 
-    this->drawScene(&this->gBufferPipeline, modelComponents, positions);
+    this->drawScene(&this->gBufferPipeline, modelComponents, positions, false);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -380,6 +419,7 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
     this->lightingPipeline.setIntUniform("gPosition", 0);
     this->lightingPipeline.setIntUniform("gNormal", 1);
     this->lightingPipeline.setIntUniform("gAlbedoSpec", 2);
+    this->lightingPipeline.setIntUniform("pointDepthMap", 3);
 
     this->lightingPipeline.bindUniformBlock("LightData", LIGHTING_SYSTEM_BINDING_POINT);
     glActiveTexture(GL_TEXTURE0);
@@ -388,8 +428,11 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
     glBindTexture(GL_TEXTURE_2D, this->normalFrameBuffer);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, this->specularColorFrameBuffer);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, this->pointShadowDepthCube);
 
-    this->gBufferPipeline.setVec3Uniform("viewPos", camera->getPosition());
+    this->lightingPipeline.setVec3Uniform("viewPos", camera->getPosition());
+    this->lightingPipeline.setFloatUniform("far_plane", SHADOW_FAR);
 
     glBindVertexArray(this->quad.VAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
