@@ -17,5 +17,5 @@ void main () {
 
 	texCoord = texCoordVert;
 	normal = normalVert;
-	pos = positionVert;
+	pos = (model * vec4(positionVert, 1.0)).xyz;
 }

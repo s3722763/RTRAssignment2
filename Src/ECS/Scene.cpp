@@ -96,7 +96,7 @@ void Scene::load(Camera camera) {
     this->createEntity(&info);
 
     EntityCreateInfo lightEntityInfo{};
-    lightEntityInfo.positionComponent.WorldPosition = glm::vec3{ -10.0, 10.0, 0.0 };
+    lightEntityInfo.positionComponent.WorldPosition = glm::vec3{ -3.3, 1, -8.9};
     lightEntityInfo.flags = EntityCreateInfoFlags::HasPosition;
 
     size_t id = this->createEntity(&lightEntityInfo);
@@ -200,7 +200,7 @@ void Scene::update(float delta_s, SceneUpdateResult* result) {
     }
 
     this->camera.updateCamera(delta_s, currentKeyStates);
-
+    std::cout << this->camera.getPosition().x << ", " << this->camera.getPosition().y << ", " << this->camera.getPosition().z << std::endl;
     if (currentKeyStates[SDL_SCANCODE_Q] == 1) {
         *result |= SceneUpdateResultFlags::Quit;
     }

@@ -125,5 +125,6 @@
     <None Include="Resources\Shaders\pointShadow.frag" />
     <None Include="Resources\Shaders\pointShadow.vert" />
     <None Include="Resources\Shaders\pointShadow.geom" />
+    <None Include="Resources\Shaders\deferred.geom" />
   </ItemGroup>
 </Project>

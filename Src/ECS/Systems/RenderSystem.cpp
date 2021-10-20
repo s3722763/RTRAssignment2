@@ -7,7 +7,7 @@
 constexpr unsigned int LIGHTING_SYSTEM_BINDING_POINT = 0;
 
 constexpr unsigned int SHADOW_DIMENSIONS = 1024;
-constexpr float SHADOW_FAR = 100.0f;
+constexpr float SHADOW_FAR = 25.0f;
 
 const std::array<glm::vec3, 4> QUAD_VERTICES = {
     glm::vec3{-1.0f, 1.0f, 0.0f},
@@ -304,7 +304,7 @@ void RenderSystem::setupPointShadows() {
 
 void RenderSystem::generateShadows(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, glm::mat4 view, Camera* camera, int width, int height) {
     // Ortho for direction, perspective for point
-    const float near_plane = 1.0f;
+    const float near_plane = 0.01f;
     const float far_plane = SHADOW_FAR;
 
     glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, near_plane, far_plane);
@@ -408,6 +408,9 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
     this->particleSystem.render(positions, viewProj, view);
 
     this->gBufferPipeline.use();
+    this->gBufferPipeline.setIntUniform("gPosition", 0);
+    this->gBufferPipeline.setIntUniform("gNormal", 1);
+    this->gBufferPipeline.setIntUniform("gAlbedoSpec", 2);
     this->gBufferPipeline.setMatrix4x4Uniform("viewProj", viewProj);
 
     this->drawScene(&this->gBufferPipeline, modelComponents, positions, false);
