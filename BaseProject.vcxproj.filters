@@ -126,5 +126,7 @@
     <None Include="Resources\Shaders\pointShadow.vert" />
     <None Include="Resources\Shaders\pointShadow.geom" />
     <None Include="Resources\Shaders\deferred.geom" />
+    <None Include="Resources\Shaders\directionalShadow.frag" />
+    <None Include="Resources\Shaders\directionalShadow.vert" />
   </ItemGroup>
 </Project>

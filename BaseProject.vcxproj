@@ -213,6 +213,8 @@ xcopy /y /d /e "$(ProjectDir)\Resources\*" "$(OutDir)\Resources\"</Command>
     <None Include="Resources\Shaders\cube.vert" />
     <None Include="Resources\Shaders\deferred.frag" />
     <None Include="Resources\Shaders\deferred.geom" />
+    <None Include="Resources\Shaders\directionalShadow.frag" />
+    <None Include="Resources\Shaders\directionalShadow.vert" />
     <None Include="Resources\Shaders\lighting.vert" />
     <None Include="Resources\Shaders\lighting.frag" />
     <None Include="Resources\Shaders\deferred.vert" />

@@ -38,20 +38,20 @@ void LightingSystem::addLight(LightInfo* info) {
 	}
 }
 
-std::array<glm::mat4, MAX_LIGHTS> LightingSystem::generateLightSpaceTransforms(const std::vector<PositionComponent>* positionComponents) {
-	std::array<glm::mat4, MAX_LIGHTS> lightSpaceTransforms{};
+std::vector<glm::mat4> LightingSystem::generateLightSpaceTransformsDirectional() {
+	std::vector<glm::mat4> lightSpaceTransforms{};
 	
-	const float near_plane = 1.0f;
-	const float far_plane = 7.5f;
+	for (int i = 0; i < MAX_LIGHTS; i++) {
+		auto direction = this->lightData.lights.directions[i];
 
-	glm::mat4 orthoProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+		if (direction.w != 0) {
+			// TODO: Implement for point lights
+			glm::vec3 direction3 = glm::vec3{ direction.x, direction.y, direction.z };
+			glm::vec3 position = -direction* 4.0f;
 
-	size_t i = 0;
-	for (auto& lightId : this->lightEntityIds) {
-		// TODO: Implement for point lights
-		glm::mat4 lightView = glm::lookAt(positionComponents->at(lightId).WorldPosition, glm::vec3{ 0.0, 0.0, 0.0 }, glm::vec3{ 0.0, 1.0, 0.0 });
-		lightSpaceTransforms[i] = orthoProj * lightView;
-		i += 1;
+			glm::mat4 lightView = glm::lookAt(position, glm::vec3{ 0.0, 0.0, 0.0 }, { 0.0f, 1.0f, 0.0f });
+			lightSpaceTransforms.push_back(lightView);	
+		}
 	}
 
 	return lightSpaceTransforms;

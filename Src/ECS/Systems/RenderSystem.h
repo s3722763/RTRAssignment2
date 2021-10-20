@@ -37,7 +37,8 @@ private:
 	Pipeline lightCubePipeline;
 	Pipeline skyboxPipeline;
 	// Pipeline for shadows
-	Pipeline shadowGenerationPipeline;
+	Pipeline pointShadowGeneratePipeline;
+	Pipeline directionalShadowGeneratePipeline;
 
 	// Subsystems
 	LightingSystem lightingSystem;
@@ -72,9 +73,9 @@ private:
 	void drawScene(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, bool genShadows);
 
 	// Shadows
-	void setupShadows();
+	void setupDirectionalShadows();
 	void setupPointShadows();
-	void generateShadows(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, glm::mat4 view, Camera* camera, int width, int height);
+	void generateShadows(const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, glm::mat4 view, Camera* camera, int width, int height);
 
 public:
 	void init(Window* window);

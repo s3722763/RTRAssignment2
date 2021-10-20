@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string_view>
 #include <stb/stb_image.h>
+#include <glm/gtc/type_ptr.hpp>
 constexpr unsigned int LIGHTING_SYSTEM_BINDING_POINT = 0;
 
 constexpr unsigned int SHADOW_DIMENSIONS = 1024;
@@ -254,7 +255,13 @@ void RenderSystem::drawScene(Pipeline* pipeline, const std::vector<ModelComponen
     }
 }
 
-void RenderSystem::setupShadows() {
+void RenderSystem::setupDirectionalShadows() {
+    PipelineCreateInfo info{};
+    info.fragmentShaderPath = "Resources/Shaders/directionalShadow.frag";
+    info.vertexShaderPath = "Resources/Shaders/directionalShadow.vert";
+    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader);
+    this->directionalShadowGeneratePipeline.init(&info);
+
     glGenFramebuffers(1, &this->shadowFrameBuffer);
 
     glGenTextures(1, &this->shadowsDepthMap);
@@ -262,15 +269,11 @@ void RenderSystem::setupShadows() {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_DIMENSIONS, SHADOW_DIMENSIONS, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    PipelineCreateInfo info{};
-    info.fragmentShaderPath = "Resources/Shaders/pointShadow.frag";
-    info.vertexShaderPath = "Resources/Shaders/pointShadow.vert";
-    info.geometryShaderPath = "Resources/Shaders/pointShadow.geom";
-    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader | PipelineCreateInfoFlags::GeometryShader);
-    this->shadowGenerationPipeline.init(&info);
+    glm::vec4 borderColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(borderColor));
 
     // Bind depth buffer to texture
     glBindFramebuffer(GL_FRAMEBUFFER, this->shadowFrameBuffer);
@@ -281,6 +284,13 @@ void RenderSystem::setupShadows() {
 }
 
 void RenderSystem::setupPointShadows() {
+    PipelineCreateInfo info{};
+    info.fragmentShaderPath = "Resources/Shaders/pointShadow.frag";
+    info.vertexShaderPath = "Resources/Shaders/pointShadow.vert";
+    info.geometryShaderPath = "Resources/Shaders/pointShadow.geom";
+    info.flags |= (PipelineCreateInfoFlags::VertexShader | PipelineCreateInfoFlags::FragmentShader | PipelineCreateInfoFlags::GeometryShader);
+    this->pointShadowGeneratePipeline.init(&info);
+
     glGenFramebuffers(1, &this->pointShadowFrameBuffer);
     glGenTextures(1, &this->pointShadowDepthCube);
     glBindTexture(GL_TEXTURE_CUBE_MAP, this->pointShadowDepthCube);
@@ -302,12 +312,12 @@ void RenderSystem::setupPointShadows() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void RenderSystem::generateShadows(Pipeline* pipeline, const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, glm::mat4 view, Camera* camera, int width, int height) {
+void RenderSystem::generateShadows(const std::vector<ModelComponent>* modelComponents, const std::vector<PositionComponent>* positions, glm::mat4 view, Camera* camera, int width, int height) {
     // Ortho for direction, perspective for point
-    const float near_plane = 0.01f;
-    const float far_plane = SHADOW_FAR;
+    const float point_near_plane = 0.01f;
+    const float point_far_plane = SHADOW_FAR;
 
-    glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, near_plane, far_plane);
+    glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, point_near_plane, point_far_plane);
 
     std::vector<LightTransformInformation> allLightSpaceTransforms = this->lightingSystem.generateLightSpaceTransformsPoint(positions);
 
@@ -315,7 +325,7 @@ void RenderSystem::generateShadows(Pipeline* pipeline, const std::vector<ModelCo
     glBindFramebuffer(GL_FRAMEBUFFER, this->pointShadowFrameBuffer);
 
     glClear(GL_DEPTH_BUFFER_BIT);
-    pipeline->use();
+    this->pointShadowGeneratePipeline.use();
 
     // For each light
     for (auto& lightSpaceTransforms : allLightSpaceTransforms) {
@@ -323,15 +333,35 @@ void RenderSystem::generateShadows(Pipeline* pipeline, const std::vector<ModelCo
             auto iStr = std::to_string(i);
             std::string uniform = "shadowMatrices[" + iStr + "]";
             auto matrix = shadowProj * lightSpaceTransforms.transforms[i];
-            pipeline->setMatrix4x4Uniform(uniform.c_str(), matrix);
+            this->pointShadowGeneratePipeline.setMatrix4x4Uniform(uniform.c_str(), matrix);
         }
 
-        pipeline->setFloatUniform("far_plane", far_plane);
-        pipeline->setVec3Uniform("lightPos", lightSpaceTransforms.position);
+        this->pointShadowGeneratePipeline.setFloatUniform("far_plane", point_far_plane);
+        this->pointShadowGeneratePipeline.setVec3Uniform("lightPos", lightSpaceTransforms.position);
         
-        this->drawScene(pipeline, modelComponents, positions, true);
+        this->drawScene(&this->pointShadowGeneratePipeline, modelComponents, positions, true);
     }
 
+    // Directional shadows
+    const float directional_near_plane = 1.0f;
+    const float directional_far_plane = 20.0f;
+
+    glm::mat4 orthoProj = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, directional_near_plane, directional_far_plane);
+
+    auto directionalMatrixes = this->lightingSystem.generateLightSpaceTransformsDirectional();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, this->shadowFrameBuffer);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    this->directionalShadowGeneratePipeline.use();
+    glCullFace(GL_FRONT);
+
+    for (auto& directionalMatrix : directionalMatrixes) {
+        auto matrix = orthoProj * directionalMatrix;
+        this->directionalShadowGeneratePipeline.setMatrix4x4Uniform("lightSpaceMatrix", matrix);
+        this->drawScene(&this->directionalShadowGeneratePipeline, modelComponents, positions, true);
+    }
+
+    glCullFace(GL_BACK);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -367,7 +397,7 @@ void RenderSystem::init(Window* window) {
     this->quad.init();
     this->cube.init();
     this->particleSystem.init();
-    this->setupShadows();
+    this->setupDirectionalShadows();
     this->setupPointShadows();
 }
 
@@ -398,7 +428,7 @@ void RenderSystem::update(const std::vector<PositionComponent>* positions, std::
 }
 
 void RenderSystem::render(const std::vector<PositionComponent>* positions, const std::vector<ModelComponent>* modelComponents, glm::mat4 viewProj, glm::mat4 view, glm::mat4 proj, Camera* camera, int width, int height) {
-    this->generateShadows(&this->shadowGenerationPipeline, modelComponents, positions, view, camera, width, height);
+    this->generateShadows(modelComponents, positions, view, camera, width, height);
     glViewport(0, 0, width, height);
     // GEOMETRY PART OF DEFERRED PIPELINE
     glBindFramebuffer(GL_FRAMEBUFFER, this->gBuffer);
@@ -423,8 +453,10 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
     this->lightingPipeline.setIntUniform("gNormal", 1);
     this->lightingPipeline.setIntUniform("gAlbedoSpec", 2);
     this->lightingPipeline.setIntUniform("pointDepthMap", 3);
+    this->lightingPipeline.setIntUniform("directionalDepthMap", 4);
 
     this->lightingPipeline.bindUniformBlock("LightData", LIGHTING_SYSTEM_BINDING_POINT);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, this->positionColorFrameBuffer);
     glActiveTexture(GL_TEXTURE1);
@@ -433,9 +465,22 @@ void RenderSystem::render(const std::vector<PositionComponent>* positions, const
     glBindTexture(GL_TEXTURE_2D, this->specularColorFrameBuffer);
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_CUBE_MAP, this->pointShadowDepthCube);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, this->shadowsDepthMap);
 
     this->lightingPipeline.setVec3Uniform("viewPos", camera->getPosition());
     this->lightingPipeline.setFloatUniform("far_plane", SHADOW_FAR);
+
+    const float directional_near_plane = 1.0f;
+    const float directional_far_plane = 20.0f;
+
+    glm::mat4 orthoProj = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, directional_near_plane, directional_far_plane);
+
+    auto directionalMatrixes = this->lightingSystem.generateLightSpaceTransformsDirectional();
+
+    if (directionalMatrixes.size() > 0) {
+        this->lightingPipeline.setMatrix4x4Uniform("lightSpaceMatrix", orthoProj * directionalMatrixes[0]);
+    }
 
     glBindVertexArray(this->quad.VAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

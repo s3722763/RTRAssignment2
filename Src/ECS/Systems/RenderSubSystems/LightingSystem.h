@@ -49,6 +49,6 @@ public:
 	void update(const std::vector<PositionComponent>* positions);
 	void addLight(LightInfo* info);
 
-	std::array<glm::mat4, MAX_LIGHTS> generateLightSpaceTransforms(const std::vector<PositionComponent>* positionComponents);
+	std::vector<glm::mat4> generateLightSpaceTransformsDirectional();
 	std::vector<LightTransformInformation> generateLightSpaceTransformsPoint(const std::vector<PositionComponent>* positionComponents);
 };
