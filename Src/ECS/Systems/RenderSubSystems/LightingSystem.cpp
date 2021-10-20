@@ -63,7 +63,7 @@ std::vector<LightTransformInformation> LightingSystem::generateLightSpaceTransfo
 	size_t j = 0;
 	for (auto& lightId : this->lightEntityIds) {
 		auto direction = this->lightData.lights.directions[j];
-		if (direction.x == 0 && direction.y == 0 && direction.z == 0) {
+		if (direction.w == 0) {
 			// Point light
 			LightTransformInformation lightTransformInformation;
 			std::array<glm::mat4, 6> transforms;

@@ -33,7 +33,13 @@ vec3 getDiffuse(vec3 pos, vec3 normal, vec3 albedo) {
 	
 	for (uint i = uint(0); i < lightData.numberLights; i++) {
 		// Right now only supports point lights
-		vec3 lightDir = normalize(lightData.lights.positions[i].xyz - pos);
+		vec3 lightDir = vec3(0.0, 0.0, 0.0);
+
+		if (lightData.lights.directions[i].w == 0) {
+			lightDir = normalize(lightData.lights.positions[i].xyz - pos);
+		} else {
+			lightDir = normalize(-lightData.lights.directions[i].xyz);
+		}
 
 		float diff = max(dot(normal, lightDir), 0.0);
 		vec3 diffuse = diff * albedo * lightData.lights.diffuses[i].rgb;
@@ -47,7 +53,13 @@ vec3 getSpecular(vec3 pos, vec3 normal, float specIn) {
 	vec3 result = vec3(0);
 
 	for (uint i = uint(0); i < lightData.numberLights; i++) {
-		vec3 lightDir = normalize(lightData.lights.positions[i].xyz - pos);
+		vec3 lightDir = vec3(0.0, 0.0, 0.0);
+
+		if (lightData.lights.directions[i].w == 0) {
+			lightDir = normalize(lightData.lights.positions[i].xyz - pos);
+		} else {
+			lightDir = normalize(-lightData.lights.directions[i].xyz);
+		}
 
 		vec3 viewDir = normalize(viewPos - pos);
 		vec3 halfwayDir = normalize(lightDir + viewDir);

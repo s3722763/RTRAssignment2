@@ -96,15 +96,16 @@ void Scene::load(Camera camera) {
     this->createEntity(&info);
 
     EntityCreateInfo lightEntityInfo{};
-    lightEntityInfo.positionComponent.WorldPosition = glm::vec3{ -3.3, 1, -8.9};
+    LightInfo lightInfo;
+    //lightEntityInfo.positionComponent.WorldPosition = glm::vec3{ 0, 10, 0};
+    //lightInfo.direction = glm::vec4{ 0.0 };
+    lightInfo.direction = glm::vec4{ 0.0, -1.0, 1.0, 1.0 };
     lightEntityInfo.flags = EntityCreateInfoFlags::HasPosition;
 
     size_t id = this->createEntity(&lightEntityInfo);
 
-    LightInfo lightInfo;
     lightInfo.ambient = glm::vec4{ 0.0 };
     lightInfo.entityId = id;
-    lightInfo.direction = glm::vec4{ 0.0 };
     lightInfo.specular = glm::vec4{ 0.5, 0.5, 0.5, 1.0f };
     lightInfo.diffuse = glm::vec4{ 0.5, 0.5, 0.5, 1 };
 
